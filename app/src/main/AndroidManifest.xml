@@ -25,6 +25,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".activity.PlayerActivity"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.AppCompat.Light"
+            android:windowSoftInputMode="stateHidden|adjustPan"
+            android:configChanges="orientation|keyboardHidden|screenSize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service android:name="isberg.udacity.spotifystreamer.service.PlayerService"/>
     </application>
 
 </manifest>

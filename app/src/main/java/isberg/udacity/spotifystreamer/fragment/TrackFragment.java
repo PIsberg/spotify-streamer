@@ -1,6 +1,7 @@
 package isberg.udacity.spotifystreamer.fragment;
 
 
+import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -13,6 +14,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -27,6 +29,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import isberg.udacity.spotifystreamer.MainActivity;
+import isberg.udacity.spotifystreamer.activity.PlayerActivity;
 import isberg.udacity.spotifystreamer.R;
 import isberg.udacity.spotifystreamer.model.TrackData;
 import kaaes.spotify.webapi.android.SpotifyApi;
@@ -34,6 +37,8 @@ import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
 import retrofit.RetrofitError;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Toast;
 
 public class TrackFragment extends Fragment {
 
@@ -82,7 +87,6 @@ public class TrackFragment extends Fragment {
     public void onViewStateRestored(Bundle bundle) {
         ArrayList<TrackData> trackDataList = new ArrayList<TrackData>();
 
-        // Note: the following code is for retain the current data/state e.q when offline + rotate device
         if(bundle != null && bundle.containsKey(TRACK_DATA_KEY)) {
             trackDataList = bundle.getParcelableArrayList(TRACK_DATA_KEY);
             Log.d("onViewStateRestored", trackDataList.get(0).getAlbumName());
@@ -128,6 +132,27 @@ public class TrackFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_track, container, false);
 
         trackListView = (ListView) rootView.findViewById(R.id.listview_track);
+        trackListView.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapter, View v, int position,
+                                    long arg3) {
+                TrackData trackData = (TrackData) adapter.getItemAtPosition(position);
+                Toast.makeText(getActivity(), "Pressed item " + trackData.getId(), Toast.LENGTH_SHORT).show();
+
+                ActionBar actionBar = getActivity().getActionBar();
+                actionBar.setTitle("player title"); //TODO something else what
+                actionBar.setDisplayHomeAsUpEnabled(true);
+
+                PlayerActivity playerFragment = new PlayerActivity();
+
+                Bundle bundle = new Bundle();
+                bundle.putString("trackPreviewURL", trackData.getPreviewUrl());
+
+                Intent intentMain = new Intent(getActivity(), PlayerActivity.class);
+                intentMain.putExtra("trackBundle", bundle);
+                startActivity(intentMain);
+            }
+            });
         trackListView.setAdapter(trackAdapter);
 
         Bundle bundle = this.getArguments();
@@ -150,6 +175,8 @@ public class TrackFragment extends Fragment {
         trackSearchTask.execute(artistId);
         return rootView;
     }
+
+
 }
     class TrackAdapter extends ArrayAdapter<TrackData> {
 
@@ -256,9 +283,10 @@ public class TrackFragment extends Fragment {
                     if(track.album.images != null && track.album.images.size() > 0) {
                         albumCoverUrl = track.album.images.get(0).url;
                     }
-                    TrackData trackData = new TrackData(track.id, track.name, track.album.name, albumCoverUrl);
+                    TrackData trackData = new TrackData(track.id, track.name, track.album.name, track.preview_url, albumCoverUrl);
 
                     Log.d(LOG_TAG, "Track " + track.name);
+                    Log.d(LOG_TAG, "previewUrl" + track.preview_url);
                     tracks.add(trackData);
                 }
 
