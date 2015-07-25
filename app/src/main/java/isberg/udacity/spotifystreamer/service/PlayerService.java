@@ -11,53 +11,80 @@ import android.util.Log;
 import java.io.IOException;
 
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnBufferingUpdateListener {
+
+    private MediaPlayer mediaPlayer = null;
+
     public static final String PLAYER_ACTION_PLAY = "PLAY";
     public static final String PLAYER_ACTION_PAUSE = "PAUSE";
     public static final String PLAYER_ACTION_STOP = "STOP";
 
-    MediaPlayer mMediaPlayer = null;
+    private void initMediaPlayer() {
+        mediaPlayer = new MediaPlayer();
+        mediaPlayer.setOnPreparedListener(PlayerService.this);
+        mediaPlayer.setOnErrorListener(this);
+        mediaPlayer.setOnBufferingUpdateListener(this);
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+    }
 
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.getAction().equals(PLAYER_ACTION_PLAY)) {
 
-            //TODO: I only need one mediaplayer instance, right?
-            //Toast.makeText(super.getApplicationContext(), "Play intent", Toast.LENGTH_SHORT).show();
-            Log.d("PlayerService ", "play service");
-            mMediaPlayer = new MediaPlayer();
+        String actionCommand = intent.getAction();
+        Log.d("PlayerService", "onStartCommand:" + actionCommand);
 
-            //String url = "https://p.scdn.co/mp3-preview/e7b1e7e641fa64be0d1c650357653fc9f0f8302c";
+        if(mediaPlayer == null) {
+            initMediaPlayer();
+        }
 
-            Bundle playerBundle = intent.getExtras().getBundle("playerBundle");
-            String url = "";
-            if (playerBundle != null) {
-                url = playerBundle.getString("trackPreviewURL");
-            }
+        if (actionCommand.equals(PLAYER_ACTION_PLAY)) {
 
-            mMediaPlayer.setOnPreparedListener(PlayerService.this);
-            mMediaPlayer.setOnErrorListener(this);
-            mMediaPlayer.setOnBufferingUpdateListener(this);
-            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            String url = getUrl(intent);
+            int seekTimeMsec = getSeekTime(intent);
+
             try {
-                mMediaPlayer.setDataSource(url);
-               // mMediaPlayer.setDataSource(this, absolute);
+                mediaPlayer.setDataSource(url);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            mMediaPlayer.prepareAsync(); // prepare async to not block main thread
+            if(seekTimeMsec > 0) {
+                mediaPlayer.seekTo(seekTimeMsec);
+            }
 
+            mediaPlayer.prepareAsync(); // prepare async to not block main thread
         }
-        else if(intent.getAction().equals(PLAYER_ACTION_PAUSE)) {
-            mMediaPlayer.pause();
+        else if(actionCommand.equals(PLAYER_ACTION_PAUSE)) {
+            mediaPlayer.pause();
         }
-        else if(intent.getAction().equals(PLAYER_ACTION_STOP)) {
-            mMediaPlayer.stop();
+        else if(actionCommand.equals(PLAYER_ACTION_STOP)) {
+            mediaPlayer.stop();
         }
+
+        //mMediaPlayer.getCurrentPosition()
+
         return Service.START_STICKY;
     }
 
+    private String getUrl(Intent intent) {
+        String url = "";
+        Bundle playerBundle = intent.getExtras().getBundle("playerBundle");
 
+        if (playerBundle != null) {
+            url = playerBundle.getString("trackPreviewURL");
+        }
 
+        return url;
+    }
+
+    private int getSeekTime(Intent intent) {
+        int seekTimeMsec = 0;
+        Bundle playerBundle = intent.getExtras().getBundle("playerBundle");
+
+        if (playerBundle != null) {
+            seekTimeMsec = playerBundle.getInt("seekTimeMsec");
+        }
+
+        return seekTimeMsec;
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -66,9 +93,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     /** Called when MediaPlayer is ready */
     public void onPrepared(MediaPlayer mMediaPlayer) {
-
-
-        Log.d("PlayerService ", "play service");
+        Log.d("PlayerService ", "onPrepared");
         mMediaPlayer.start();
     }
 

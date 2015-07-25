@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +20,7 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import isberg.udacity.spotifystreamer.R;
 import isberg.udacity.spotifystreamer.model.TrackData;
@@ -39,10 +41,9 @@ public class PlayerActivity extends Activity {
     private int currentIndex;
     private int indexSize = 0;
 
+
     private View.OnClickListener playOnClickListener;
     private View.OnClickListener pauseOnClickListener;
-    private View.OnClickListener prevTrackOnClickListener;
-    private View.OnClickListener nextTrackOnClickListener;
 
     public PlayerActivity() {
     }
@@ -77,9 +78,25 @@ public class PlayerActivity extends Activity {
         LinearLayout innerLinearLayout2 = (LinearLayout) findViewById(R.id.linearlayout2);
         trackPlaying = (SeekBar) innerLinearLayout2.findViewById(R.id.track_playing_seekbar);
 
+        trackPlaying.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                Toast.makeText(getApplicationContext(), "Seekbar onProgressChanged with progress: " + progress, Toast.LENGTH_SHORT).show();
+            }
+        });
+
 
         // Track playing info layout
-        LinearLayout innerLinearLayout3 = (LinearLayout) findViewById(R.id.linearlayout3);
+        RelativeLayout innerLinearLayout3 = (RelativeLayout) findViewById(R.id.linearlayout3); // TODO change name
         trackCurrentTime = (TextView) innerLinearLayout3.findViewById(R.id.track_currenttime_textview);
         trackCurrentTime.setText("00:00");  //TODO: put in strings.xml
 
@@ -98,16 +115,6 @@ public class PlayerActivity extends Activity {
         nextTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_nextTrack_button);
         nextTrackButton.setText("next"); //TODO: put in strings.xml
 
-        /*
-        prevTrackOnClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playPreviousTrack(v);
-            }
-        };
-        prevTrackButton.setOnClickListener(prevTrackOnClickListener);
-        */
-
         playOnClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -121,16 +128,6 @@ public class PlayerActivity extends Activity {
                 pauseCurrentTrack(v);
             }
         };
-/*
-        nextTrackOnClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playNextTrack(v);
-            }
-        };
-
-        prevTrackButton.setOnClickListener(prevTrackOnClickListener);
-     */
 
     }
 
@@ -147,8 +144,8 @@ public class PlayerActivity extends Activity {
         albumNameTextView.setText(albumName);
         artistNameTextView.setText(artistName);
         trackNameTextView.setText(trackName);
-        //TODO: format duration time to readable format
-        trackTotalTime.setText(String.valueOf(trackDurationMs));
+
+        trackTotalTime.setText(formatTime(trackDurationMs));
 
         Picasso.with(this).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
             @Override
@@ -171,6 +168,15 @@ public class PlayerActivity extends Activity {
         Toast.makeText(this, "onCreateView ", Toast.LENGTH_SHORT).show();
 
         return rootView;
+    }
+
+    private String formatTime(long timeInMs) {
+        return String.format("%d:%d",
+                TimeUnit.MILLISECONDS.toMinutes(timeInMs),
+                TimeUnit.MILLISECONDS.toSeconds(timeInMs) -
+                            TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeInMs))
+        );
+
     }
 
     public void playCurrentTrack(View view) {
@@ -262,7 +268,32 @@ public class PlayerActivity extends Activity {
             nextTrackButton.setEnabled(true);
         }
 
-        Toast.makeText(this, "Pressed next track button " + currentIndex, Toast.LENGTH_SHORT).show();
     }
+
+    public void playTrackFrom(int progress) {
+
+        Intent stopIntent = new Intent(this, PlayerService.class);
+        stopIntent.setAction(PlayerService.PLAYER_ACTION_STOP);
+        startService(stopIntent);
+        //TODO: actual seek time this sec
+
+
+        trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
+
+        Intent playIntent = new Intent(this, PlayerService.class);
+        playIntent.setAction(PlayerService.PLAYER_ACTION_PLAY);
+        Bundle bundle = new Bundle();
+        bundle.putInt("seekTimeMsec", 2); //TODO
+        playIntent.putExtra("playerBundle", bundle);
+
+        startService(playIntent);
+    }
+
+
+    private int calcSeekTimeMsec(int progressPercent, long currentSeekTime, long totalTrackTime) {
+        return 1;
+    }
+
+
 }
 
