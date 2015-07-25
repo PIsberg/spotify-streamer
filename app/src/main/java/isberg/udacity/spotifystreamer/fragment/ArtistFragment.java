@@ -126,6 +126,7 @@ public class ArtistFragment extends Fragment {
                 TrackFragment trackFragment = new TrackFragment();
                 Bundle bundle = new Bundle();
                 bundle.putString("artistId", itemContent.getArtistId());
+                bundle.putString("artistName", itemContent.getArtistName());
                 trackFragment.setArguments(bundle);
 
                 FragmentTransaction trackFragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();

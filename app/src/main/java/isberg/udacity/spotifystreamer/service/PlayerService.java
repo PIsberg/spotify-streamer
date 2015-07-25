@@ -4,17 +4,15 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 
-import java.net.URISyntaxException;
-
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnBufferingUpdateListener {
     public static final String PLAYER_ACTION_PLAY = "PLAY";
+    public static final String PLAYER_ACTION_PAUSE = "PAUSE";
 
     MediaPlayer mMediaPlayer = null;
 
@@ -25,11 +23,13 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             Log.d("PlayerService ", "play service");
             mMediaPlayer = new MediaPlayer();
 
-            String url = "https://p.scdn.co/mp3-preview/e7b1e7e641fa64be0d1c650357653fc9f0f8302c";
+            //String url = "https://p.scdn.co/mp3-preview/e7b1e7e641fa64be0d1c650357653fc9f0f8302c";
 
-            //url= url.replaceFirst("https", "http");
-
-
+            Bundle playerBundle = intent.getExtras().getBundle("playerBundle");
+            String url = "";
+            if (playerBundle != null) {
+                url = playerBundle.getString("trackPreviewURL");
+            }
 
             mMediaPlayer.setOnPreparedListener(PlayerService.this);
             mMediaPlayer.setOnErrorListener(this);
@@ -44,6 +44,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
             mMediaPlayer.prepareAsync(); // prepare async to not block main thread
 
+        }
+        else if(intent.getAction().equals(PLAYER_ACTION_PAUSE)) {
+            mMediaPlayer.pause();
         }
         return Service.START_STICKY;
     }

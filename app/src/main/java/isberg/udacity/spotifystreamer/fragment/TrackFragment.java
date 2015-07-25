@@ -121,7 +121,8 @@ public class TrackFragment extends Fragment {
                 return super.onOptionsItemSelected(item);
         }
     }
-
+    //TODO:
+    private String artistName;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -147,6 +148,11 @@ public class TrackFragment extends Fragment {
 
                 Bundle bundle = new Bundle();
                 bundle.putString("trackPreviewURL", trackData.getPreviewUrl());
+                bundle.putString("albumCoverUrl", trackData.getAlbumCoverUrl());
+                bundle.putString("albumName", trackData.getAlbumName());
+                bundle.putString("trackName", trackData.getName());
+                bundle.putString("artistName", artistName);
+                bundle.putLong("trackDurationMs", trackData.getDurationMs());
 
                 Intent intentMain = new Intent(getActivity(), PlayerActivity.class);
                 intentMain.putExtra("trackBundle", bundle);
@@ -157,6 +163,7 @@ public class TrackFragment extends Fragment {
 
         Bundle bundle = this.getArguments();
         String artistId = bundle.getString("artistId");
+        this.artistName = bundle.getString("artistName");
 
         TrackSearchTask trackSearchTask = new TrackSearchTask(new TrackAdapterCallBack() {
 
@@ -283,10 +290,13 @@ public class TrackFragment extends Fragment {
                     if(track.album.images != null && track.album.images.size() > 0) {
                         albumCoverUrl = track.album.images.get(0).url;
                     }
-                    TrackData trackData = new TrackData(track.id, track.name, track.album.name, track.preview_url, albumCoverUrl);
+                    TrackData trackData = new TrackData(track.id, track.name, track.album.name, albumCoverUrl, track.preview_url,  track.duration_ms);
+
 
                     Log.d(LOG_TAG, "Track " + track.name);
                     Log.d(LOG_TAG, "previewUrl" + track.preview_url);
+                    Log.d(LOG_TAG, "albumCoverUrl" + albumCoverUrl);
+
                     tracks.add(trackData);
                 }
 
