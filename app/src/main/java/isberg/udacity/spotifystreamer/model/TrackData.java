@@ -31,6 +31,15 @@ public class TrackData implements Parcelable {
         this.durationMs = in.readLong();
     }
 
+    public void readFromParcel(Parcel in) {
+        this.id = in.readString();
+        this.name = in.readString();
+        this.albumName = in.readString();
+        this.albumCoverUrl = in.readString();
+        this.previewUrl = in.readString();
+        this.durationMs = in.readLong();
+    }
+
     public String getAlbumCoverUrl() {
         return albumCoverUrl;
     }
@@ -85,12 +94,12 @@ public class TrackData implements Parcelable {
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        out.writeValue(id);
-        out.writeValue(name);
-        out.writeValue(albumName);
-        out.writeValue(albumCoverUrl);
-        out.writeValue(previewUrl);
-        out.writeValue(durationMs);
+        out.writeString(id);
+        out.writeString(name);
+        out.writeString(albumName);
+        out.writeString(albumCoverUrl);
+        out.writeString(previewUrl);
+        out.writeLong(durationMs);
     }
 
     public static final Parcelable.Creator<TrackData> CREATOR = new Parcelable.Creator<TrackData>() {

@@ -124,6 +124,7 @@ public class TrackFragment extends Fragment {
     //TODO:
     private String artistName;
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -138,21 +139,30 @@ public class TrackFragment extends Fragment {
             public void onItemClick(AdapterView<?> adapter, View v, int position,
                                     long arg3) {
                 TrackData trackData = (TrackData) adapter.getItemAtPosition(position);
-                Toast.makeText(getActivity(), "Pressed item " + trackData.getId(), Toast.LENGTH_SHORT).show();
+                ArrayList<TrackData> trackDatas = trackAdapter.getTrackData();
+
+                Toast.makeText(getActivity(), "Pressed item " + trackData.getId() + "with pos " + position, Toast.LENGTH_SHORT).show();
 
                 ActionBar actionBar = getActivity().getActionBar();
-                actionBar.setTitle("player title"); //TODO something else what
+                //actionBar.setTitle("player title"); //TODO something else what
                 actionBar.setDisplayHomeAsUpEnabled(true);
 
                 PlayerActivity playerFragment = new PlayerActivity();
 
                 Bundle bundle = new Bundle();
+
+                //bundle.put
+                bundle.putParcelableArrayList("trackData", trackDatas);
+                bundle.putInt("currentIndex", position);
+                bundle.putString("artistName", artistName);
+                /*
                 bundle.putString("trackPreviewURL", trackData.getPreviewUrl());
                 bundle.putString("albumCoverUrl", trackData.getAlbumCoverUrl());
                 bundle.putString("albumName", trackData.getAlbumName());
                 bundle.putString("trackName", trackData.getName());
                 bundle.putString("artistName", artistName);
                 bundle.putLong("trackDurationMs", trackData.getDurationMs());
+                */
 
                 Intent intentMain = new Intent(getActivity(), PlayerActivity.class);
                 intentMain.putExtra("trackBundle", bundle);
@@ -168,7 +178,7 @@ public class TrackFragment extends Fragment {
         TrackSearchTask trackSearchTask = new TrackSearchTask(new TrackAdapterCallBack() {
 
             @Override
-            public void onCallBack(TrackData[] result) {
+            public void onCallBack(ArrayList<TrackData> result) {
                 if (result != null) {
                     trackAdapter.clear();
                     for (TrackData trackData : result) {
@@ -247,7 +257,7 @@ public class TrackFragment extends Fragment {
         }
     }
 
-    class TrackSearchTask extends AsyncTask<String, Void, TrackData[]> {
+    class TrackSearchTask extends AsyncTask<String, Void, ArrayList<TrackData>> {
         private final String LOG_TAG = TrackSearchTask.class.getSimpleName();
 
         private TrackAdapterCallBack callback;
@@ -257,7 +267,7 @@ public class TrackFragment extends Fragment {
         }
 
         @Override
-        protected TrackData[] doInBackground(String... params) {
+        protected ArrayList<TrackData> doInBackground(String... params) {
 
             if (params.length == 0) {
                 return null;
@@ -292,28 +302,28 @@ public class TrackFragment extends Fragment {
                     }
                     TrackData trackData = new TrackData(track.id, track.name, track.album.name, albumCoverUrl, track.preview_url,  track.duration_ms);
 
-
-                    Log.d(LOG_TAG, "Track " + track.name);
-                    Log.d(LOG_TAG, "previewUrl" + track.preview_url);
-                    Log.d(LOG_TAG, "albumCoverUrl" + albumCoverUrl);
+                    Log.d(LOG_TAG, "Track name: " + track.name);
+                    Log.d(LOG_TAG, "PreviewUrl: " + track.preview_url);
+                    Log.d(LOG_TAG, "AlbumCoverUrl: " + albumCoverUrl);
 
                     tracks.add(trackData);
                 }
-
+                /*
                 if (tracks.size() > 0) {
                     array = tracks.toArray(new TrackData[tracks.size()]);
                 }
+                */
             }
-            return array;
+            return tracks;
         }
 
         @Override
-        protected void onPostExecute(TrackData[] result) {
+        protected void onPostExecute(ArrayList<TrackData> result) {
             callback.onCallBack(result);
         }
 
     }
 
     interface TrackAdapterCallBack {
-        public void onCallBack(TrackData[] result);
+        public void onCallBack(ArrayList<TrackData> result);
     }

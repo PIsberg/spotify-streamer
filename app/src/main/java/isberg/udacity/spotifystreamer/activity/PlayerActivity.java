@@ -18,7 +18,10 @@ import android.widget.Toast;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
+
 import isberg.udacity.spotifystreamer.R;
+import isberg.udacity.spotifystreamer.model.TrackData;
 import isberg.udacity.spotifystreamer.service.PlayerService;
 
 public class PlayerActivity extends Activity {
@@ -31,8 +34,15 @@ public class PlayerActivity extends Activity {
     private String trackPreviewURL, albumName, albumCoverUrl, artistName, trackName;
     private long trackDurationMs;
 
+    private ArrayList<TrackData> trackData;
+
+    private int currentIndex;
+    private int indexSize = 0;
+
     private View.OnClickListener playOnClickListener;
     private View.OnClickListener pauseOnClickListener;
+    private View.OnClickListener prevTrackOnClickListener;
+    private View.OnClickListener nextTrackOnClickListener;
 
     public PlayerActivity() {
     }
@@ -44,59 +54,59 @@ public class PlayerActivity extends Activity {
 
         Bundle trackBundle = getIntent().getExtras().getBundle("trackBundle");
         if (trackBundle != null) {
-            trackPreviewURL = trackBundle.getString("trackPreviewURL");
-            albumName = trackBundle.getString("albumName");
-            albumCoverUrl = trackBundle.getString("albumCoverUrl");
-            trackName = trackBundle.getString("trackName");
             artistName = trackBundle.getString("artistName");
-            trackDurationMs = trackBundle.getLong("trackDurationMs");
+            trackData = trackBundle.getParcelableArrayList("trackData");
+            currentIndex = trackBundle.getInt("currentIndex");
         }
 
-        Toast.makeText(this, "onCreate albumName" + albumName + "trackName"+ trackName, Toast.LENGTH_SHORT).show();
+        initGui();
+        populateGui(currentIndex);
+    }
 
-        LinearLayout innerLinearLayout = (LinearLayout) findViewById(R.id.linearlayout1);
+    private void initGui() {
+        // Track info layout
+        LinearLayout innerLinearLayout1 = (LinearLayout) findViewById(R.id.linearlayout1);
 
-        artistNameTextView = (TextView) innerLinearLayout.findViewById(R.id.artistname_player_textview);
-        artistNameTextView.setText(artistName);
+        artistNameTextView = (TextView) innerLinearLayout1.findViewById(R.id.artistname_player_textview);
+        albumNameTextView = (TextView) innerLinearLayout1.findViewById(R.id.albumname_player_textview);
+        albumCoverImageView = (ImageView) innerLinearLayout1.findViewById(R.id.albumcover_player_imageview);
+        trackNameTextView = (TextView) innerLinearLayout1.findViewById(R.id.trackname_player_textview);
 
-        albumNameTextView = (TextView) innerLinearLayout.findViewById(R.id.albumname_player_textview);
-        albumNameTextView.setText(albumName);
 
-        albumCoverImageView = (ImageView) innerLinearLayout.findViewById(R.id.albumcover_player_imageview);
+        // Track playing layout
+        LinearLayout innerLinearLayout2 = (LinearLayout) findViewById(R.id.linearlayout2);
+        trackPlaying = (SeekBar) innerLinearLayout2.findViewById(R.id.track_playing_seekbar);
 
-        Log.d("albumCoverUrl", albumCoverUrl);
-        Picasso.with(this).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
+
+        // Track playing info layout
+        LinearLayout innerLinearLayout3 = (LinearLayout) findViewById(R.id.linearlayout3);
+        trackCurrentTime = (TextView) innerLinearLayout3.findViewById(R.id.track_currenttime_textview);
+        trackCurrentTime.setText("00:00");  //TODO: put in strings.xml
+
+        trackTotalTime = (TextView) innerLinearLayout3.findViewById(R.id.track_totaltime_textview);
+
+
+        // Track player controls layout
+        LinearLayout innerLinearLayout4 = (LinearLayout) findViewById(R.id.linearlayout4);
+
+        prevTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_prevTrack_button);
+        prevTrackButton.setText("prev"); //TODO: put in strings.xml
+
+        playTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_play_button);
+        playTrackButton.setText("play"); //TODO: put in strings.xml
+
+        nextTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_nextTrack_button);
+        nextTrackButton.setText("next"); //TODO: put in strings.xml
+
+        /*
+        prevTrackOnClickListener = new View.OnClickListener() {
             @Override
-            public void onSuccess() {
+            public void onClick(View v) {
+                playPreviousTrack(v);
             }
-
-            @Override
-            public void onError() {
-                Log.d("PlayerActivity", "Piccasso error!");
-            }
-        });
-
-
-        trackNameTextView = (TextView) innerLinearLayout.findViewById(R.id.trackname_player_textview);
-        trackNameTextView.setText(trackName);
-
-        trackCurrentTime = (TextView) innerLinearLayout.findViewById(R.id.track_currenttime_textview);
-        trackCurrentTime.setText("00:00");
-
-        trackPlaying = (SeekBar) innerLinearLayout.findViewById(R.id.track_playing_seekbar);
-
-        trackTotalTime = (TextView) innerLinearLayout.findViewById(R.id.track_totaltime_textview);
-        //TODO: format duration time to readable format
-        trackTotalTime.setText(String.valueOf(trackDurationMs));
-
-        prevTrackButton = (Button) innerLinearLayout.findViewById(R.id.player_prevTrack_button);
-        prevTrackButton.setText("prev");
-
-        playTrackButton = (Button) innerLinearLayout.findViewById(R.id.player_play_button);
-        playTrackButton.setText("play");
-
-        nextTrackButton = (Button) innerLinearLayout.findViewById(R.id.player_nextTrack_button);
-        nextTrackButton.setText("next");
+        };
+        prevTrackButton.setOnClickListener(prevTrackOnClickListener);
+        */
 
         playOnClickListener = new View.OnClickListener() {
             @Override
@@ -111,6 +121,46 @@ public class PlayerActivity extends Activity {
                 pauseCurrentTrack(v);
             }
         };
+/*
+        nextTrackOnClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playNextTrack(v);
+            }
+        };
+
+        prevTrackButton.setOnClickListener(prevTrackOnClickListener);
+     */
+
+    }
+
+    private void populateGui(int currentIndex) {
+
+        indexSize = trackData.size();
+
+        albumName = trackData.get(currentIndex).getAlbumName();
+        albumCoverUrl = trackData.get(currentIndex).getAlbumCoverUrl();
+        trackName = trackData.get(currentIndex).getName();
+
+        trackDurationMs = trackData.get(currentIndex).getDurationMs();
+
+        albumNameTextView.setText(albumName);
+        artistNameTextView.setText(artistName);
+        trackNameTextView.setText(trackName);
+        //TODO: format duration time to readable format
+        trackTotalTime.setText(String.valueOf(trackDurationMs));
+
+        Picasso.with(this).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
+            @Override
+            public void onSuccess() {
+            }
+
+            @Override
+            public void onError() {
+                Log.d("PlayerActivity", "Piccasso error!");
+            }
+        });
+
     }
 
 
@@ -124,6 +174,8 @@ public class PlayerActivity extends Activity {
     }
 
     public void playCurrentTrack(View view) {
+
+        trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
         Toast.makeText(this, "Pressed Play button " + trackPreviewURL, Toast.LENGTH_SHORT).show();
 
@@ -156,11 +208,61 @@ public class PlayerActivity extends Activity {
 
     }
     public void playPreviousTrack(View view) {
+        Toast.makeText(this, "Pressed Previous track button " + currentIndex, Toast.LENGTH_SHORT).show();
+
+        int prevIndex = --currentIndex;
+
+        if(prevIndex>= 0 && prevIndex<= trackData.size() ) {
+
+            Intent intent = new Intent(this, PlayerService.class);
+            intent.setAction(PlayerService.PLAYER_ACTION_STOP);
+            startService(intent);
+
+            populateGui(prevIndex);
+
+            playCurrentTrack(view);
+
+            currentIndex = prevIndex;
+        }
+
+
+        if(currentIndex+1 == trackData.size()) {
+            nextTrackButton.setEnabled(false);
+        }
+
+        if(currentIndex-1 > 0) {
+            prevTrackButton.setEnabled(true);
+        }
 
     }
 
     public void playNextTrack(View view) {
+        Toast.makeText(this, "Pressed next track button " + currentIndex, Toast.LENGTH_SHORT).show();
 
+        int nextIndex = ++currentIndex;
+
+        if(nextIndex>= 0 && nextIndex<= trackData.size() ) {
+
+            Intent intent = new Intent(this, PlayerService.class);
+            intent.setAction(PlayerService.PLAYER_ACTION_STOP);
+            startService(intent);
+
+            populateGui(nextIndex);
+
+            playCurrentTrack(view);
+
+            currentIndex = nextIndex;
+        }
+
+        if(currentIndex-1 == 0) {
+            prevTrackButton.setEnabled(false);
+        }
+
+        if(currentIndex+1 < trackData.size()) {
+            nextTrackButton.setEnabled(true);
+        }
+
+        Toast.makeText(this, "Pressed next track button " + currentIndex, Toast.LENGTH_SHORT).show();
     }
 }
 

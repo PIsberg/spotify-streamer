@@ -13,12 +13,14 @@ import java.io.IOException;
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnBufferingUpdateListener {
     public static final String PLAYER_ACTION_PLAY = "PLAY";
     public static final String PLAYER_ACTION_PAUSE = "PAUSE";
+    public static final String PLAYER_ACTION_STOP = "STOP";
 
     MediaPlayer mMediaPlayer = null;
 
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent.getAction().equals(PLAYER_ACTION_PLAY)) {
 
+            //TODO: I only need one mediaplayer instance, right?
             //Toast.makeText(super.getApplicationContext(), "Play intent", Toast.LENGTH_SHORT).show();
             Log.d("PlayerService ", "play service");
             mMediaPlayer = new MediaPlayer();
@@ -47,6 +49,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         }
         else if(intent.getAction().equals(PLAYER_ACTION_PAUSE)) {
             mMediaPlayer.pause();
+        }
+        else if(intent.getAction().equals(PLAYER_ACTION_STOP)) {
+            mMediaPlayer.stop();
         }
         return Service.START_STICKY;
     }
