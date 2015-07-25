@@ -63,8 +63,8 @@
         android:id="@+id/track_playing_seekbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingLeft="12sp"
-        android:paddingRight="12sp"
+        android:layout_marginRight="30dp"
+        android:layout_marginLeft="30dp"
         android:progress="0"
         android:secondaryProgress="0"/>
 
@@ -91,7 +91,7 @@
             />
     </RelativeLayout>
 
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/linearlayout4"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
@@ -103,19 +103,22 @@
             android:id="@+id/player_prevTrack_button"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:onClick="playPreviousTrack" />
+            android:onClick="playPreviousTrack"
+            android:layout_alignParentLeft="true"/>
 
         <Button
             android:id="@+id/player_play_button"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:onClick="playCurrentTrack" />
+            android:onClick="playCurrentTrack"
+            android:layout_centerHorizontal="true"/>
 
         <Button
             android:id="@+id/player_nextTrack_button"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:onClick="playNextTrack" />
-    </LinearLayout>
+            android:onClick="playNextTrack"
+            android:layout_alignParentRight="true"/>
+    </RelativeLayout>
 
 </LinearLayout>

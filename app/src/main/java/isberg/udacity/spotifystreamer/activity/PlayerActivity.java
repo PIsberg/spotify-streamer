@@ -91,6 +91,8 @@ public class PlayerActivity extends Activity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 Toast.makeText(getApplicationContext(), "Seekbar onProgressChanged with progress: " + progress, Toast.LENGTH_SHORT).show();
+
+                playTrackFrom(progress);
             }
         });
 
@@ -98,13 +100,13 @@ public class PlayerActivity extends Activity {
         // Track playing info layout
         RelativeLayout innerLinearLayout3 = (RelativeLayout) findViewById(R.id.linearlayout3); // TODO change name
         trackCurrentTime = (TextView) innerLinearLayout3.findViewById(R.id.track_currenttime_textview);
-        trackCurrentTime.setText("00:00");  //TODO: put in strings.xml
+        trackCurrentTime.setText(getString(R.string.track_start_time));
 
         trackTotalTime = (TextView) innerLinearLayout3.findViewById(R.id.track_totaltime_textview);
 
 
         // Track player controls layout
-        LinearLayout innerLinearLayout4 = (LinearLayout) findViewById(R.id.linearlayout4);
+        RelativeLayout innerLinearLayout4 = (RelativeLayout) findViewById(R.id.linearlayout4); // TODO change name
 
         prevTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_prevTrack_button);
         prevTrackButton.setText("prev"); //TODO: put in strings.xml
@@ -270,7 +272,7 @@ public class PlayerActivity extends Activity {
 
     }
 
-    public void playTrackFrom(int progress) {
+    public void playTrackFrom(int progressPercent) {
 
         Intent stopIntent = new Intent(this, PlayerService.class);
         stopIntent.setAction(PlayerService.PLAYER_ACTION_STOP);
@@ -283,15 +285,18 @@ public class PlayerActivity extends Activity {
         Intent playIntent = new Intent(this, PlayerService.class);
         playIntent.setAction(PlayerService.PLAYER_ACTION_PLAY);
         Bundle bundle = new Bundle();
-        bundle.putInt("seekTimeMsec", 2); //TODO
+        trackDurationMs = trackData.get(currentIndex).getDurationMs();
+        long seekTimeInMsec = calcSeekTimeMsec(progressPercent, trackDurationMs);
+        trackCurrentTime.setText(formatTime(seekTimeInMsec));
+        bundle.putInt("seekTimeMsec", (int)seekTimeInMsec);
         playIntent.putExtra("playerBundle", bundle);
 
         startService(playIntent);
     }
 
 
-    private int calcSeekTimeMsec(int progressPercent, long currentSeekTime, long totalTrackTime) {
-        return 1;
+    private long calcSeekTimeMsec(int progressPercent, long trackDurationMs) {
+        return progressPercent * trackDurationMs;
     }
 
 
