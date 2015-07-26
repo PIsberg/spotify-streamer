@@ -143,11 +143,20 @@ public class PlayerActivity extends Activity {
         };
 
         //case when first or last is selected in list
-        /*
-        if(currentIndex == 0) {
 
+        if(currentIndex == 0) {
+            prevTrackButton.setEnabled(false);
         }
-        */
+        else {
+            prevTrackButton.setEnabled(true);
+        }
+
+        if(currentIndex == trackData.size()-1) {
+            nextTrackButton.setEnabled(false);
+        }
+        else {
+            nextTrackButton.setEnabled(true);
+        }
     }
 
     private void populateGui(int currentIndex) {
@@ -182,7 +191,7 @@ public class PlayerActivity extends Activity {
             }
         });
 
-        trackPlayingSeekbar.setMax((int)trackDurationMs);
+        trackPlayingSeekbar.setMax((int) trackDurationMs);
     }
 
     private BroadcastReceiver playerServiceMessageReceiver = new BroadcastReceiver() {
@@ -232,11 +241,11 @@ public class PlayerActivity extends Activity {
         intent.putExtra("playerBundle", bundle);
 
         startService(intent);
-
     }
 
 
     public void pauseCurrentTrack(View view) {
+        Log.d("PlayerActivity", "pauseCurrentTrack");
 
         playTrackButton.setImageResource(android.R.drawable.ic_media_play);
         playTrackButton.setOnClickListener(playOnClickListener);
@@ -248,9 +257,10 @@ public class PlayerActivity extends Activity {
 
     }
     public void playPreviousTrack(View view) {
+        Log.d("PlayerActivity", "playPreviousTrack");
         int prevIndex = --currentIndex;
 
-        if(prevIndex>= 0 && prevIndex<= trackData.size() ) {
+        if(prevIndex>= 0 && prevIndex <= (trackData.size()-1) ) {
 
             Intent intent = new Intent(this, PlayerService.class);
             intent.setAction(PlayerService.PLAYER_ACTION_STOP);
@@ -263,8 +273,7 @@ public class PlayerActivity extends Activity {
             currentIndex = prevIndex;
         }
 
-
-        if(currentIndex+1 == trackData.size()) {
+        if(currentIndex+1 == (trackData.size()-1)) {
             nextTrackButton.setEnabled(false);
         }
 
@@ -275,9 +284,11 @@ public class PlayerActivity extends Activity {
     }
 
     public void playNextTrack(View view) {
+        Log.d("PlayerActivity", "playNextTrack");
+
         int nextIndex = ++currentIndex;
 
-        if(nextIndex>= 0 && nextIndex<= trackData.size() ) {
+        if(nextIndex>= 0 && nextIndex<= (trackData.size()-1) ) {
 
             Intent intent = new Intent(this, PlayerService.class);
             intent.setAction(PlayerService.PLAYER_ACTION_STOP);
@@ -294,13 +305,14 @@ public class PlayerActivity extends Activity {
             prevTrackButton.setEnabled(false);
         }
 
-        if(currentIndex+1 < trackData.size()) {
+        if(currentIndex+1 < (trackData.size()-1)) {
             nextTrackButton.setEnabled(true);
         }
 
     }
 
     public void playTrackFrom(int progress) {
+        Log.d("PlayerActivity", "playTrackFrom");
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
