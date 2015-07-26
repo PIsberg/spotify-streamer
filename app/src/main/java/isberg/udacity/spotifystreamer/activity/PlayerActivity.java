@@ -2,8 +2,12 @@ package isberg.udacity.spotifystreamer.activity;
 
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,14 +34,14 @@ public class PlayerActivity extends Activity {
 
     private TextView artistNameTextView, albumNameTextView, trackNameTextView, trackCurrentTime, trackTotalTime;
     private ImageView albumCoverImageView;
-    private SeekBar trackPlaying;
+    private SeekBar trackPlayingSeekbar;
     private Button prevTrackButton, playTrackButton, nextTrackButton;
 
     private String trackPreviewURL, albumName, albumCoverUrl, artistName, trackName;
-    private long trackDurationMs;
 
     private ArrayList<TrackData> trackData;
 
+    private long trackDurationMs;
     private int currentIndex;
     private int indexSize = 0;
 
@@ -62,6 +66,8 @@ public class PlayerActivity extends Activity {
 
         initGui();
         populateGui(currentIndex);
+        LocalBroadcastManager.getInstance(this).registerReceiver(playerServiceMessageReceiver, new IntentFilter("PlayerActivity"));
+
     }
 
     private void initGui() {
@@ -76,9 +82,9 @@ public class PlayerActivity extends Activity {
 
         // Track playing layout
         LinearLayout innerLinearLayout2 = (LinearLayout) findViewById(R.id.linearlayout2);
-        trackPlaying = (SeekBar) innerLinearLayout2.findViewById(R.id.track_playing_seekbar);
+        trackPlayingSeekbar = (SeekBar) innerLinearLayout2.findViewById(R.id.track_playing_seekbar);
 
-        trackPlaying.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        trackPlayingSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
@@ -159,8 +165,23 @@ public class PlayerActivity extends Activity {
                 Log.d("PlayerActivity", "Piccasso error!");
             }
         });
-
     }
+
+    private BroadcastReceiver playerServiceMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("PlayerActivity", "onReceive");
+
+            int currentPositionInMs = intent.getIntExtra("currentPositionInMs", 0);
+            trackCurrentTime.setText(formatTime(currentPositionInMs));
+
+            Log.d("PlayerActivity", "onReceive :: currentPositionInMs: " + currentPositionInMs + ", trackDurationMs: " + trackDurationMs);
+            int progress = calcSeekPercent(currentPositionInMs, trackDurationMs);
+
+            Log.d("PlayerActivity", "onReceive :: progress " + progress);
+            trackPlayingSeekbar.setProgress(progress);
+        }
+    };
 
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -173,13 +194,14 @@ public class PlayerActivity extends Activity {
     }
 
     private String formatTime(long timeInMs) {
-        return String.format("%d:%d",
+        return String.format("%02d:%02d",
                 TimeUnit.MILLISECONDS.toMinutes(timeInMs),
                 TimeUnit.MILLISECONDS.toSeconds(timeInMs) -
                             TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeInMs))
         );
 
     }
+
 
     public void playCurrentTrack(View view) {
 
@@ -294,11 +316,20 @@ public class PlayerActivity extends Activity {
         startService(playIntent);
     }
 
-
+    // calc for click on seek bar
     private long calcSeekTimeMsec(int progressPercent, long trackDurationMs) {
         return progressPercent * trackDurationMs;
     }
 
+    // calc for update bar to current playing position
+    private int calcSeekPercent(int currentDurationMs, long totalTrackDurationMs) {
+        int result = 0;
+        if(currentDurationMs > 0 && totalTrackDurationMs > 0) {
+            result = (int) ((currentDurationMs / totalTrackDurationMs) * 100);
+        }
+        return result;
+    }
 
 }
+
 

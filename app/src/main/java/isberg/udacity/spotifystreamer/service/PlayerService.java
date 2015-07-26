@@ -5,18 +5,27 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnBufferingUpdateListener {
 
-    private MediaPlayer mediaPlayer = null;
+    private MediaPlayer mediaPlayer;
 
     public static final String PLAYER_ACTION_PLAY = "PLAY";
     public static final String PLAYER_ACTION_PAUSE = "PAUSE";
     public static final String PLAYER_ACTION_STOP = "STOP";
+
+    private final int BROADCAST_INTERVAL_MS = 500;
+    private TimerTask broadCastCurrentTimeTimerTask;
+    private Handler handler = new Handler();
+    private Timer broadCastCurrentTimeTimer;
 
     private void initMediaPlayer() {
         mediaPlayer = new MediaPlayer();
@@ -35,12 +44,13 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             initMediaPlayer();
         }
 
-        if (actionCommand.equals(PLAYER_ACTION_PLAY)) {
+        if (actionCommand.equals(PLAYER_ACTION_PLAY) && !mediaPlayer.isPlaying()) {
 
             String url = getUrl(intent);
             int seekTimeMsec = getSeekTime(intent);
 
             try {
+                //TODO: on play/puase/play I get a error here (setting the same data source twice?) how to deal with that?
                 mediaPlayer.setDataSource(url);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -52,14 +62,18 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
             mediaPlayer.prepareAsync(); // prepare async to not block main thread
         }
-        else if(actionCommand.equals(PLAYER_ACTION_PAUSE)) {
+        else if(actionCommand.equals(PLAYER_ACTION_PAUSE) && mediaPlayer.isPlaying()) {
+            broadCastCurrentTimeTimerTask.cancel();
+            broadCastCurrentTimeTimer = null;
             mediaPlayer.pause();
         }
-        else if(actionCommand.equals(PLAYER_ACTION_STOP)) {
+        else if(actionCommand.equals(PLAYER_ACTION_STOP) && mediaPlayer.isPlaying()) {
+            broadCastCurrentTimeTimerTask.cancel();
+            broadCastCurrentTimeTimer.cancel();
+            broadCastCurrentTimeTimer = null;
             mediaPlayer.stop();
+            mediaPlayer.reset();
         }
-
-        //mMediaPlayer.getCurrentPosition()
 
         return Service.START_STICKY;
     }
@@ -93,7 +107,12 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     /** Called when MediaPlayer is ready */
     public void onPrepared(MediaPlayer mMediaPlayer) {
-        Log.d("PlayerService ", "onPrepared");
+        Log.d("PlayerService", "onPrepared");
+        if(broadCastCurrentTimeTimer == null) {
+            broadCastCurrentTimeTimer = new Timer();
+            runBroadCastCurrentTimeTimerTask();
+            broadCastCurrentTimeTimer.schedule(broadCastCurrentTimeTimerTask, 0, BROADCAST_INTERVAL_MS);
+        }
         mMediaPlayer.start();
     }
 
@@ -105,5 +124,23 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
         return false;
+    }
+
+
+    public void runBroadCastCurrentTimeTimerTask() {
+        broadCastCurrentTimeTimerTask = new TimerTask() {
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        long currentPosition = mediaPlayer.getCurrentPosition();
+                        Log.d("PlayerService", "currentPosition: " + currentPosition);
+                        Intent intent = new Intent("PlayerActivity");
+                        intent.putExtra("currentPositionInMs", mediaPlayer.getCurrentPosition());
+
+                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                    }
+                });
+            }
+        };
     }
 }
