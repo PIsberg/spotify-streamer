@@ -101,11 +101,13 @@ public class PlayerActivity extends Activity {
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.d("PlayerActivity", "onProgressChanged:: " + progress);
+                if (fromUser) {
+                    Log.d("PlayerActivity", "onProgressChanged:: " + progress);
 
-                seekBar.setProgress(progress);
-                trackCurrentTime.setText(formatTime(progress));
-                playTrackFrom(progress);
+                    seekBar.setProgress(progress);
+                    trackCurrentTime.setText(formatTime(progress));
+                    playTrackFrom(progress);
+                }
 
             }
         });
