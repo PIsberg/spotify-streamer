@@ -45,6 +45,8 @@ public class PlayerActivity extends Activity {
     private int currentIndex;
     private int indexSize = 0;
 
+    private final int MAX_TRACK_DURATION_DEMO = 30000;
+
 
     private View.OnClickListener playOnClickListener;
     private View.OnClickListener pauseOnClickListener;
@@ -84,21 +86,27 @@ public class PlayerActivity extends Activity {
         LinearLayout innerLinearLayout2 = (LinearLayout) findViewById(R.id.linearlayout2);
         trackPlayingSeekbar = (SeekBar) innerLinearLayout2.findViewById(R.id.track_playing_seekbar);
 
+
         trackPlayingSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                Log.d("PlayerActivity", "onStopTrackingTouch");
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+                Log.d("PlayerActivity", "onStartTrackingTouch");
             }
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Toast.makeText(getApplicationContext(), "Seekbar onProgressChanged with progress: " + progress, Toast.LENGTH_SHORT).show();
+                Log.d("PlayerActivity", "onProgressChanged:: " + progress);
 
+                seekBar.setProgress(progress);
+                trackCurrentTime.setText(formatTime(progress));
                 playTrackFrom(progress);
+
             }
         });
 
@@ -147,11 +155,16 @@ public class PlayerActivity extends Activity {
         albumCoverUrl = trackData.get(currentIndex).getAlbumCoverUrl();
         trackName = trackData.get(currentIndex).getName();
 
-        trackDurationMs = trackData.get(currentIndex).getDurationMs();
-
         albumNameTextView.setText(albumName);
         artistNameTextView.setText(artistName);
         trackNameTextView.setText(trackName);
+
+        trackDurationMs = trackData.get(currentIndex).getDurationMs();
+
+        //NOTE: in demo api only at most 30 seconds of preview is available
+        if(trackDurationMs > MAX_TRACK_DURATION_DEMO) {
+            trackDurationMs = MAX_TRACK_DURATION_DEMO;
+        }
 
         trackTotalTime.setText(formatTime(trackDurationMs));
 
@@ -165,6 +178,8 @@ public class PlayerActivity extends Activity {
                 Log.d("PlayerActivity", "Piccasso error!");
             }
         });
+
+        trackPlayingSeekbar.setMax((int)trackDurationMs);
     }
 
     private BroadcastReceiver playerServiceMessageReceiver = new BroadcastReceiver() {
@@ -174,13 +189,8 @@ public class PlayerActivity extends Activity {
 
             int currentPositionInMs = intent.getIntExtra("currentPositionInMs", 0);
             trackCurrentTime.setText(formatTime(currentPositionInMs));
-
-            Log.d("PlayerActivity", "onReceive :: currentPositionInMs: " + currentPositionInMs + ", trackDurationMs: " + trackDurationMs);
-            int progress = calcSeekPercent(currentPositionInMs, trackDurationMs);
-
-            Log.d("PlayerActivity", "onReceive :: progress " + progress);
-            trackPlayingSeekbar.setProgress(progress);
-        }
+            trackPlayingSeekbar.setProgress(currentPositionInMs);
+     }
     };
 
 
@@ -207,8 +217,6 @@ public class PlayerActivity extends Activity {
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
-        Toast.makeText(this, "Pressed Play button " + trackPreviewURL, Toast.LENGTH_SHORT).show();
-
         playTrackButton.setText("pause");
         playTrackButton.setOnClickListener(pauseOnClickListener);
 
@@ -226,8 +234,6 @@ public class PlayerActivity extends Activity {
 
     public void pauseCurrentTrack(View view) {
 
-        Toast.makeText(this, "Pressed Pause button " + trackPreviewURL, Toast.LENGTH_SHORT).show();
-
         playTrackButton.setText("play");
         playTrackButton.setOnClickListener(playOnClickListener);
 
@@ -238,8 +244,6 @@ public class PlayerActivity extends Activity {
 
     }
     public void playPreviousTrack(View view) {
-        Toast.makeText(this, "Pressed Previous track button " + currentIndex, Toast.LENGTH_SHORT).show();
-
         int prevIndex = --currentIndex;
 
         if(prevIndex>= 0 && prevIndex<= trackData.size() ) {
@@ -267,8 +271,6 @@ public class PlayerActivity extends Activity {
     }
 
     public void playNextTrack(View view) {
-        Toast.makeText(this, "Pressed next track button " + currentIndex, Toast.LENGTH_SHORT).show();
-
         int nextIndex = ++currentIndex;
 
         if(nextIndex>= 0 && nextIndex<= trackData.size() ) {
@@ -294,42 +296,19 @@ public class PlayerActivity extends Activity {
 
     }
 
-    public void playTrackFrom(int progressPercent) {
-
-        Intent stopIntent = new Intent(this, PlayerService.class);
-        stopIntent.setAction(PlayerService.PLAYER_ACTION_STOP);
-        startService(stopIntent);
-        //TODO: actual seek time this sec
-
+    public void playTrackFrom(int progress) {
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
         Intent playIntent = new Intent(this, PlayerService.class);
-        playIntent.setAction(PlayerService.PLAYER_ACTION_PLAY);
+        playIntent.setAction(PlayerService.PLAYER_ACTION_SEEK);
         Bundle bundle = new Bundle();
-        trackDurationMs = trackData.get(currentIndex).getDurationMs();
-        long seekTimeInMsec = calcSeekTimeMsec(progressPercent, trackDurationMs);
-        trackCurrentTime.setText(formatTime(seekTimeInMsec));
-        bundle.putInt("seekTimeMsec", (int)seekTimeInMsec);
+
+        bundle.putInt("seekTimeMsec", progress);
+        bundle.putString("trackPreviewURL", trackPreviewURL);
         playIntent.putExtra("playerBundle", bundle);
 
         startService(playIntent);
     }
 
-    // calc for click on seek bar
-    private long calcSeekTimeMsec(int progressPercent, long trackDurationMs) {
-        return progressPercent * trackDurationMs;
-    }
-
-    // calc for update bar to current playing position
-    private int calcSeekPercent(int currentDurationMs, long totalTrackDurationMs) {
-        int result = 0;
-        if(currentDurationMs > 0 && totalTrackDurationMs > 0) {
-            result = (int) ((currentDurationMs / totalTrackDurationMs) * 100);
-        }
-        return result;
-    }
-
 }
-
-

@@ -21,8 +21,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public static final String PLAYER_ACTION_PLAY = "PLAY";
     public static final String PLAYER_ACTION_PAUSE = "PAUSE";
     public static final String PLAYER_ACTION_STOP = "STOP";
+    public static final String PLAYER_ACTION_SEEK = "SEEK";
 
-    private final int BROADCAST_INTERVAL_MS = 500;
+    private final int BROADCAST_INTERVAL_MS = 50;
     private TimerTask broadCastCurrentTimeTimerTask;
     private Handler handler = new Handler();
     private Timer broadCastCurrentTimeTimer;
@@ -46,18 +47,14 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
         if (actionCommand.equals(PLAYER_ACTION_PLAY) && !mediaPlayer.isPlaying()) {
 
+            initMediaPlayer();
+
             String url = getUrl(intent);
-            int seekTimeMsec = getSeekTime(intent);
 
             try {
-                //TODO: on play/puase/play I get a error here (setting the same data source twice?) how to deal with that?
                 mediaPlayer.setDataSource(url);
             } catch (IOException e) {
                 e.printStackTrace();
-            }
-
-            if(seekTimeMsec > 0) {
-                mediaPlayer.seekTo(seekTimeMsec);
             }
 
             mediaPlayer.prepareAsync(); // prepare async to not block main thread
@@ -73,6 +70,17 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             broadCastCurrentTimeTimer = null;
             mediaPlayer.stop();
             mediaPlayer.reset();
+        }
+        else if(actionCommand.equals(PLAYER_ACTION_SEEK)) {
+
+           // mediaPlayer.pause();
+
+            int seekTimeMsec = getSeekTime(intent);
+            if(seekTimeMsec > 0) {
+                mediaPlayer.seekTo(seekTimeMsec);
+            }
+
+           //mediaPlayer.start();
         }
 
         return Service.START_STICKY;
