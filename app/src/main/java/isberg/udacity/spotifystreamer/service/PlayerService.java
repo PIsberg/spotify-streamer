@@ -23,7 +23,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public static final String PLAYER_ACTION_STOP = "STOP";
     public static final String PLAYER_ACTION_SEEK = "SEEK";
 
-    private final int BROADCAST_INTERVAL_MS = 50;
+    private final int BROADCAST_INTERVAL_MS = 300;
     private TimerTask broadCastCurrentTimeTimerTask;
     private Handler handler = new Handler();
     private Timer broadCastCurrentTimeTimer;

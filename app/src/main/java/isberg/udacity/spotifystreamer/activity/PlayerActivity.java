@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -35,7 +36,7 @@ public class PlayerActivity extends Activity {
     private TextView artistNameTextView, albumNameTextView, trackNameTextView, trackCurrentTime, trackTotalTime;
     private ImageView albumCoverImageView;
     private SeekBar trackPlayingSeekbar;
-    private Button prevTrackButton, playTrackButton, nextTrackButton;
+    private ImageButton prevTrackButton, playTrackButton, nextTrackButton;
 
     private String trackPreviewURL, albumName, albumCoverUrl, artistName, trackName;
 
@@ -69,7 +70,6 @@ public class PlayerActivity extends Activity {
         initGui();
         populateGui(currentIndex);
         LocalBroadcastManager.getInstance(this).registerReceiver(playerServiceMessageReceiver, new IntentFilter("PlayerActivity"));
-
     }
 
     private void initGui() {
@@ -122,16 +122,11 @@ public class PlayerActivity extends Activity {
 
 
         // Track player controls layout
-        RelativeLayout innerLinearLayout4 = (RelativeLayout) findViewById(R.id.linearlayout4); // TODO change name
+        LinearLayout innerLinearLayout4 = (LinearLayout) findViewById(R.id.linearlayout4);
 
-        prevTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_prevTrack_button);
-        prevTrackButton.setText("prev"); //TODO: put in strings.xml
-
-        playTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_play_button);
-        playTrackButton.setText("play"); //TODO: put in strings.xml
-
-        nextTrackButton = (Button) innerLinearLayout4.findViewById(R.id.player_nextTrack_button);
-        nextTrackButton.setText("next"); //TODO: put in strings.xml
+        prevTrackButton = (ImageButton) innerLinearLayout4.findViewById(R.id.player_prevTrack_button);
+        playTrackButton = (ImageButton) innerLinearLayout4.findViewById(R.id.player_play_button);
+        nextTrackButton = (ImageButton) innerLinearLayout4.findViewById(R.id.player_nextTrack_button);
 
         playOnClickListener = new View.OnClickListener() {
             @Override
@@ -147,6 +142,12 @@ public class PlayerActivity extends Activity {
             }
         };
 
+        //case when first or last is selected in list
+        /*
+        if(currentIndex == 0) {
+
+        }
+        */
     }
 
     private void populateGui(int currentIndex) {
@@ -219,7 +220,8 @@ public class PlayerActivity extends Activity {
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
-        playTrackButton.setText("pause");
+        playTrackButton.setImageResource(android.R.drawable.ic_media_pause);
+
         playTrackButton.setOnClickListener(pauseOnClickListener);
 
         Intent intent = new Intent(this, PlayerService.class);
@@ -236,7 +238,7 @@ public class PlayerActivity extends Activity {
 
     public void pauseCurrentTrack(View view) {
 
-        playTrackButton.setText("play");
+        playTrackButton.setImageResource(android.R.drawable.ic_media_play);
         playTrackButton.setOnClickListener(playOnClickListener);
 
         Intent intent = new Intent(this, PlayerService.class);

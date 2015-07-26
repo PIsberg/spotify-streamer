@@ -20,24 +20,25 @@
             android:id="@+id/artistname_player_textview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:gravity="left"
+            android:gravity="center_horizontal"
             android:paddingLeft="5sp"
-            android:paddingTop="12sp" />
+            android:paddingTop="12sp"
+            android:text="loading artist"/>
 
         <TextView
             android:id="@+id/albumname_player_textview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:gravity="left"
+            android:gravity="center_horizontal"
             android:paddingLeft="5sp"
-            android:paddingTop="12sp" />
+            android:paddingTop="12sp"
+            android:text="loading album name"/>
 
         <ImageView
             android:id="@+id/albumcover_player_imageview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
             android:paddingLeft="20sp"
             android:scaleType="fitXY" />
 
@@ -45,10 +46,10 @@
             android:id="@+id/trackname_player_textview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:gravity="left"
+            android:gravity="center_horizontal"
             android:paddingLeft="5sp"
-            android:paddingTop="12sp" />
+            android:paddingTop="12sp"
+            android:text="loading trackname"/>
     </LinearLayout>
 
     <LinearLayout
@@ -91,7 +92,7 @@
             />
     </RelativeLayout>
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/linearlayout4"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
@@ -99,26 +100,36 @@
         android:layout_weight="3"
         >
 
-        <Button
+        <ImageButton
             android:id="@+id/player_prevTrack_button"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:onClick="playPreviousTrack"
-            android:layout_alignParentLeft="true"/>
+            android:layout_weight="1"
+            android:layout_marginRight="15dp"
+            android:layout_alignParentLeft="true"
+            android:src="@android:drawable/ic_media_previous"
+            />
 
-        <Button
+        <ImageButton
             android:id="@+id/player_play_button"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:onClick="playCurrentTrack"
-            android:layout_centerHorizontal="true"/>
+            android:layout_weight="1"
+            android:layout_centerHorizontal="true"
+            android:src="@android:drawable/ic_media_play"
+            />
 
-        <Button
+        <ImageButton
             android:id="@+id/player_nextTrack_button"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:onClick="playNextTrack"
-            android:layout_alignParentRight="true"/>
-    </RelativeLayout>
+            android:layout_weight="1"
+            android:layout_marginLeft="15dp"
+            android:layout_alignParentRight="true"
+            android:src="@android:drawable/ic_media_next"/>
+    </LinearLayout >
 
 </LinearLayout>
