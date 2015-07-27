@@ -44,9 +44,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         if(mediaPlayer == null) {
             if (actionCommand.equals(PLAYER_ACTION_PLAY) && mediaPlayer == null) {
 
-                String url = getUrl(intent);
                 initMediaPlayer();
 
+                String url = getUrl(intent);
                 try {
                     mediaPlayer.setDataSource(url);
                 } catch (IOException e) {
@@ -62,21 +62,32 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             } else if (actionCommand.equals(PLAYER_ACTION_PAUSE) &&  mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
             } else if (actionCommand.equals(PLAYER_ACTION_SEEK)) {
-
-                int seekTimeMsec = getSeekTime(intent);
-                if (seekTimeMsec > 0) {
-                    mediaPlayer.seekTo(seekTimeMsec);
-                }
+                updateSeekTime(intent);
             } else if (actionCommand.equals(PLAYER_ACTION_STOP) && mediaPlayer.isPlaying()) {
-                //broadCastCurrentTimeTimerTask.cancel();
-                //broadCastCurrentTimeTimer.cancel();
-                //broadCastCurrentTimeTimer = null;
-                mediaPlayer.stop();
-                mediaPlayer.reset();
-                mediaPlayer = null;
+                cancelBroadCastCurrentTime();
+                terminateMediaPlayer();
             }
         }
         return Service.START_STICKY;
+    }
+
+    private void cancelBroadCastCurrentTime() {
+        broadCastCurrentTimeTimerTask.cancel();
+        broadCastCurrentTimeTimer.cancel();
+        broadCastCurrentTimeTimer = null;
+    }
+
+    private void terminateMediaPlayer() {
+        mediaPlayer.stop();
+        mediaPlayer.reset();
+        mediaPlayer = null;
+    }
+
+    private void updateSeekTime(Intent intent) {
+        int seekTimeMsec = getSeekTime(intent);
+        if (seekTimeMsec > 0) {
+            mediaPlayer.seekTo(seekTimeMsec);
+        }
     }
 
     private String getUrl(Intent intent) {

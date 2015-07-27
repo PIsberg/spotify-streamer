@@ -163,6 +163,20 @@ public class PlayerActivity extends Activity {
 
     }
 
+    @Override
+    public void onBackPressed() {
+        //Toast.makeText(this, "onBackPressed", Toast.LENGTH_SHORT).show();
+
+        trackDurationMs = 0;
+        currentIndex = 0;
+
+        Intent intent = new Intent(this, PlayerService.class);
+        intent.setAction(PlayerService.PLAYER_ACTION_STOP);
+        startService(intent);
+
+        super.onBackPressed();
+    }
+
     private void populateGui(int currentIndex) {
 
         indexSize = trackData.size();
@@ -261,7 +275,6 @@ public class PlayerActivity extends Activity {
         intent.setAction(PlayerService.PLAYER_ACTION_PAUSE);
 
         startService(intent);
-
     }
 
     public void playPreviousTrack(View view) {
