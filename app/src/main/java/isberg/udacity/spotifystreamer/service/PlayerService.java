@@ -39,50 +39,43 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         String actionCommand = intent.getAction();
-        Log.d("PlayerService", "onStartCommand:" + actionCommand);
+        Log.d("PlayerService", "onStartCommand: " + actionCommand);
 
         if(mediaPlayer == null) {
-            initMediaPlayer();
-        }
+            if (actionCommand.equals(PLAYER_ACTION_PLAY) && mediaPlayer == null) {
 
-        if (actionCommand.equals(PLAYER_ACTION_PLAY) && !mediaPlayer.isPlaying()) {
+                String url = getUrl(intent);
+                initMediaPlayer();
 
-            initMediaPlayer();
+                try {
+                    mediaPlayer.setDataSource(url);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-            String url = getUrl(intent);
-
-            try {
-                mediaPlayer.setDataSource(url);
-            } catch (IOException e) {
-                e.printStackTrace();
+                mediaPlayer.prepareAsync(); // prepare async to not block main thread
             }
-
-            mediaPlayer.prepareAsync(); // prepare async to not block main thread
         }
-        else if(actionCommand.equals(PLAYER_ACTION_PAUSE) && mediaPlayer.isPlaying()) {
-            broadCastCurrentTimeTimerTask.cancel();
-            broadCastCurrentTimeTimer = null;
-            mediaPlayer.pause();
-        }
-        else if(actionCommand.equals(PLAYER_ACTION_STOP) && mediaPlayer.isPlaying()) {
-            broadCastCurrentTimeTimerTask.cancel();
-            broadCastCurrentTimeTimer.cancel();
-            broadCastCurrentTimeTimer = null;
-            mediaPlayer.stop();
-            mediaPlayer.reset();
-        }
-        else if(actionCommand.equals(PLAYER_ACTION_SEEK)) {
+        else {
+            if (actionCommand.equals(PLAYER_ACTION_PLAY) && !mediaPlayer.isPlaying()) {
+                mediaPlayer.start();
+            } else if (actionCommand.equals(PLAYER_ACTION_PAUSE) &&  mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+            } else if (actionCommand.equals(PLAYER_ACTION_SEEK)) {
 
-           // mediaPlayer.pause();
-
-            int seekTimeMsec = getSeekTime(intent);
-            if(seekTimeMsec > 0) {
-                mediaPlayer.seekTo(seekTimeMsec);
+                int seekTimeMsec = getSeekTime(intent);
+                if (seekTimeMsec > 0) {
+                    mediaPlayer.seekTo(seekTimeMsec);
+                }
+            } else if (actionCommand.equals(PLAYER_ACTION_STOP) && mediaPlayer.isPlaying()) {
+                //broadCastCurrentTimeTimerTask.cancel();
+                //broadCastCurrentTimeTimer.cancel();
+                //broadCastCurrentTimeTimer = null;
+                mediaPlayer.stop();
+                mediaPlayer.reset();
+                mediaPlayer = null;
             }
-
-           //mediaPlayer.start();
         }
-
         return Service.START_STICKY;
     }
 
@@ -140,12 +133,14 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             public void run() {
                 handler.post(new Runnable() {
                     public void run() {
-                        long currentPosition = mediaPlayer.getCurrentPosition();
-                        Log.d("PlayerService", "currentPosition: " + currentPosition);
-                        Intent intent = new Intent("PlayerActivity");
-                        intent.putExtra("currentPositionInMs", mediaPlayer.getCurrentPosition());
+                        if(mediaPlayer != null && mediaPlayer.isPlaying()) {
+                            long currentPosition = mediaPlayer.getCurrentPosition();
+                            Log.d("PlayerService", "currentPosition: " + currentPosition);
+                            Intent intent = new Intent("PlayerActivity");
+                            intent.putExtra("currentPositionInMs", mediaPlayer.getCurrentPosition());
 
-                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                        }
                     }
                 });
             }

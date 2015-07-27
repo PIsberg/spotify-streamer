@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -43,14 +44,15 @@ public class PlayerActivity extends Activity {
     private ArrayList<TrackData> trackData;
 
     private long trackDurationMs;
-    private int currentIndex;
+    private int currentIndex = 0;
     private int indexSize = 0;
 
     private final int MAX_TRACK_DURATION_DEMO = 30000;
 
-
     private View.OnClickListener playOnClickListener;
     private View.OnClickListener pauseOnClickListener;
+
+    private enum LOCAL_STATE { PLAY, PAUSE };
 
     public PlayerActivity() {
     }
@@ -142,8 +144,7 @@ public class PlayerActivity extends Activity {
             }
         };
 
-        //case when first or last is selected in list
-
+        //case when first item or last item is selected in list
         if(currentIndex == 0) {
             prevTrackButton.setEnabled(false);
         }
@@ -157,6 +158,9 @@ public class PlayerActivity extends Activity {
         else {
             nextTrackButton.setEnabled(true);
         }
+
+        playTrackButton.setTag(LOCAL_STATE.PLAY);
+
     }
 
     private void populateGui(int currentIndex) {
@@ -226,11 +230,12 @@ public class PlayerActivity extends Activity {
 
 
     public void playCurrentTrack(View view) {
+        Log.d("PlayerActivity", "playCurrentTrack");
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
         playTrackButton.setImageResource(android.R.drawable.ic_media_pause);
-
+        playTrackButton.setTag(LOCAL_STATE.PLAY);
         playTrackButton.setOnClickListener(pauseOnClickListener);
 
         Intent intent = new Intent(this, PlayerService.class);
@@ -238,6 +243,7 @@ public class PlayerActivity extends Activity {
 
         Bundle bundle = new Bundle();
         bundle.putString("trackPreviewURL", trackPreviewURL);
+        bundle.putInt("seekTimeMsec", 0);
         intent.putExtra("playerBundle", bundle);
 
         startService(intent);
@@ -248,6 +254,7 @@ public class PlayerActivity extends Activity {
         Log.d("PlayerActivity", "pauseCurrentTrack");
 
         playTrackButton.setImageResource(android.R.drawable.ic_media_play);
+        playTrackButton.setTag(LOCAL_STATE.PAUSE);
         playTrackButton.setOnClickListener(playOnClickListener);
 
         Intent intent = new Intent(this, PlayerService.class);
@@ -256,8 +263,11 @@ public class PlayerActivity extends Activity {
         startService(intent);
 
     }
+
     public void playPreviousTrack(View view) {
+
         Log.d("PlayerActivity", "playPreviousTrack");
+        int indexBefore = currentIndex;
         int prevIndex = --currentIndex;
 
         if(prevIndex>= 0 && prevIndex <= (trackData.size()-1) ) {
@@ -268,27 +278,39 @@ public class PlayerActivity extends Activity {
 
             populateGui(prevIndex);
 
-            playCurrentTrack(view);
+            if(playTrackButton.getTag().equals(LOCAL_STATE.PLAY)) {
+                playCurrentTrack(view);
+            }
 
             currentIndex = prevIndex;
         }
-
-        if(currentIndex+1 == (trackData.size()-1)) {
-            nextTrackButton.setEnabled(false);
+        else {
+            currentIndex = indexBefore;
         }
 
-        if(currentIndex-1 > 0) {
+        if(currentIndex == (trackData.size()-1)) {
+            nextTrackButton.setEnabled(false);
+        }
+        else {
+            nextTrackButton.setEnabled(true);
+        }
+
+        if(currentIndex-1 == 0) {
+            prevTrackButton.setEnabled(false);
+        }
+        else if(currentIndex-1 > 0) {
             prevTrackButton.setEnabled(true);
         }
 
+        //Toast.makeText(this, "playPreviousTrack currentIndex: " + currentIndex, Toast.LENGTH_SHORT).show();
     }
 
     public void playNextTrack(View view) {
         Log.d("PlayerActivity", "playNextTrack");
-
+        int indexBefore = currentIndex;
         int nextIndex = ++currentIndex;
 
-        if(nextIndex>= 0 && nextIndex<= (trackData.size()-1) ) {
+        if(nextIndex >= 0 && nextIndex <= (trackData.size()-1) ) {
 
             Intent intent = new Intent(this, PlayerService.class);
             intent.setAction(PlayerService.PLAYER_ACTION_STOP);
@@ -296,19 +318,30 @@ public class PlayerActivity extends Activity {
 
             populateGui(nextIndex);
 
-            playCurrentTrack(view);
-
+            if(playTrackButton.getTag().equals(LOCAL_STATE.PLAY)) {
+                playCurrentTrack(view);
+            }
             currentIndex = nextIndex;
         }
-
-        if(currentIndex-1 == 0) {
-            prevTrackButton.setEnabled(false);
+        else {
+            currentIndex = indexBefore;
         }
 
-        if(currentIndex+1 < (trackData.size()-1)) {
+        if(currentIndex == 0) {
+            prevTrackButton.setEnabled(false);
+        }
+        else {
+            prevTrackButton.setEnabled(true);
+        }
+
+        if(currentIndex == (trackData.size()-1)) {
+            nextTrackButton.setEnabled(false);
+        }
+        else {
             nextTrackButton.setEnabled(true);
         }
 
+        //Toast.makeText(this, "playNextTrack currentIndex: " + currentIndex, Toast.LENGTH_SHORT).show();
     }
 
     public void playTrackFrom(int progress) {
