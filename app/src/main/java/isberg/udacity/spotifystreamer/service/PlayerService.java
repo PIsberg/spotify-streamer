@@ -1,7 +1,9 @@
 package isberg.udacity.spotifystreamer.service;
 
+import android.app.ProgressDialog;
 import android.app.Service;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -27,6 +29,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     private TimerTask broadCastCurrentTimeTimerTask;
     private Handler handler = new Handler();
     private Timer broadCastCurrentTimeTimer;
+
 
     private void initMediaPlayer() {
         mediaPlayer = new MediaPlayer();
@@ -85,7 +88,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     private void updateSeekTime(Intent intent) {
         int seekTimeMsec = getSeekTime(intent);
-        if (seekTimeMsec > 0) {
+        if (seekTimeMsec >= 0) {
             mediaPlayer.seekTo(seekTimeMsec);
         }
     }
@@ -126,6 +129,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             broadCastCurrentTimeTimer.schedule(broadCastCurrentTimeTimerTask, 0, BROADCAST_INTERVAL_MS);
         }
         mMediaPlayer.start();
+
+        // Notify PlayerActivity that the asynch start of the mediaplayer is finished
+
     }
 
     @Override
@@ -138,7 +144,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         return false;
     }
 
-
+    // Continuesly notifiy the PlayerActivity about the current tracks playing time
     public void runBroadCastCurrentTimeTimerTask() {
         broadCastCurrentTimeTimerTask = new TimerTask() {
             public void run() {
@@ -149,7 +155,6 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                             Log.d("PlayerService", "currentPosition: " + currentPosition);
                             Intent intent = new Intent("PlayerActivity");
                             intent.putExtra("currentPositionInMs", mediaPlayer.getCurrentPosition());
-
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
                         }
                     }

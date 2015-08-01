@@ -71,7 +71,7 @@ public class PlayerActivity extends Activity {
 
         initGui();
         populateGui(currentIndex);
-        LocalBroadcastManager.getInstance(this).registerReceiver(playerServiceMessageReceiver, new IntentFilter("PlayerActivity"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(playerServiceCurrentPosMessageReceiver, new IntentFilter("PlayerActivity"));
     }
 
     private void initGui() {
@@ -89,31 +89,7 @@ public class PlayerActivity extends Activity {
         trackPlayingSeekbar = (SeekBar) innerLinearLayout2.findViewById(R.id.track_playing_seekbar);
 
 
-        trackPlayingSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                Log.d("PlayerActivity", "onStopTrackingTouch");
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                Log.d("PlayerActivity", "onStartTrackingTouch");
-            }
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    Log.d("PlayerActivity", "onProgressChanged:: " + progress);
-
-                    seekBar.setProgress(progress);
-                    trackCurrentTime.setText(formatTime(progress));
-                    playTrackFrom(progress);
-                }
-
-            }
-        });
-
+        trackPlayingSeekbar.setOnSeekBarChangeListener(new SeekBarPlayerListener());
 
         // Track playing info layout
         RelativeLayout innerLinearLayout3 = (RelativeLayout) findViewById(R.id.linearlayout3); // TODO change name
@@ -212,11 +188,12 @@ public class PlayerActivity extends Activity {
         trackPlayingSeekbar.setMax((int) trackDurationMs);
     }
 
-    private BroadcastReceiver playerServiceMessageReceiver = new BroadcastReceiver() {
+    private BroadcastReceiver playerServiceCurrentPosMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d("PlayerActivity", "onReceive");
 
+            updateButtonStates(currentIndex);
             int currentPositionInMs = intent.getIntExtra("currentPositionInMs", 0);
             trackCurrentTime.setText(formatTime(currentPositionInMs));
             trackPlayingSeekbar.setProgress(currentPositionInMs);
@@ -246,6 +223,12 @@ public class PlayerActivity extends Activity {
     public void playCurrentTrack(View view) {
         Log.d("PlayerActivity", "playCurrentTrack");
 
+        if(playTrackButton.getTag().equals(LOCAL_STATE.PAUSE)) {
+            Intent stopIntent = new Intent(this, PlayerService.class);
+            stopIntent.setAction(PlayerService.PLAYER_ACTION_STOP);
+            startService(stopIntent);
+        }
+
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
         playTrackButton.setImageResource(android.R.drawable.ic_media_pause);
@@ -257,7 +240,7 @@ public class PlayerActivity extends Activity {
 
         Bundle bundle = new Bundle();
         bundle.putString("trackPreviewURL", trackPreviewURL);
-        bundle.putInt("seekTimeMsec", 0);
+        bundle.putInt("seekTimeMsec", 1);
         intent.putExtra("playerBundle", bundle);
 
         startService(intent);
@@ -278,83 +261,88 @@ public class PlayerActivity extends Activity {
     }
 
     public void playPreviousTrack(View view) {
+        Log.d("PlayerActivity", "playPreviousTrack In" + currentIndex);
 
-        Log.d("PlayerActivity", "playPreviousTrack");
         int indexBefore = currentIndex;
-        int prevIndex = --currentIndex;
+        int prevIndex = (currentIndex-1);
 
-        if(prevIndex>= 0 && prevIndex <= (trackData.size()-1) ) {
+        if(prevIndex >= 0 && prevIndex <= (trackData.size()-1) ) {
 
             Intent intent = new Intent(this, PlayerService.class);
             intent.setAction(PlayerService.PLAYER_ACTION_STOP);
             startService(intent);
 
-            populateGui(prevIndex);
+            currentIndex = prevIndex;
+            populateGui(currentIndex);
 
             if(playTrackButton.getTag().equals(LOCAL_STATE.PLAY)) {
+                lockDownGui();
                 playCurrentTrack(view);
             }
-
-            currentIndex = prevIndex;
+            else {
+                trackPlayingSeekbar.setProgress(0);
+                trackCurrentTime.setText(getString(R.string.track_start_time));
+            }
         }
         else {
             currentIndex = indexBefore;
         }
 
-        if(currentIndex == (trackData.size()-1)) {
-            nextTrackButton.setEnabled(false);
-        }
-        else {
-            nextTrackButton.setEnabled(true);
-        }
+        Log.d("PlayerActivity", "playPreviousTrack Out" + currentIndex);
 
-        if(currentIndex-1 == 0) {
-            prevTrackButton.setEnabled(false);
-        }
-        else if(currentIndex-1 > 0) {
+    }
+
+    private void updateButtonStates(int currentIndex) {
+
+        trackPlayingSeekbar.setEnabled(true);
+        playTrackButton.setEnabled(true);
+
+        if(currentIndex != 0) {
             prevTrackButton.setEnabled(true);
         }
 
-        //Toast.makeText(this, "playPreviousTrack currentIndex: " + currentIndex, Toast.LENGTH_SHORT).show();
+        if(currentIndex != (trackData.size()-1)) {
+            nextTrackButton.setEnabled(true);
+        }
+    }
+
+    private void lockDownGui() {
+        trackPlayingSeekbar.setEnabled(false);
+        playTrackButton.setEnabled(false);
+        prevTrackButton.setEnabled(false);
+        nextTrackButton.setEnabled(false);
     }
 
     public void playNextTrack(View view) {
-        Log.d("PlayerActivity", "playNextTrack");
+        Log.d("PlayerActivity", "playNextTrack In" + currentIndex);
         int indexBefore = currentIndex;
-        int nextIndex = ++currentIndex;
+        int nextIndex = (currentIndex+1);
 
-        if(nextIndex >= 0 && nextIndex <= (trackData.size()-1) ) {
+        if(nextIndex >= 1 && nextIndex <= trackData.size() ) {
 
             Intent intent = new Intent(this, PlayerService.class);
             intent.setAction(PlayerService.PLAYER_ACTION_STOP);
             startService(intent);
 
-            populateGui(nextIndex);
+            currentIndex = nextIndex;
+            populateGui(currentIndex);
 
             if(playTrackButton.getTag().equals(LOCAL_STATE.PLAY)) {
+                lockDownGui();
                 playCurrentTrack(view);
             }
-            currentIndex = nextIndex;
+            else {
+                trackPlayingSeekbar.setProgress(0);
+                trackCurrentTime.setText(getString(R.string.track_start_time));
+            }
         }
         else {
             currentIndex = indexBefore;
         }
 
-        if(currentIndex == 0) {
-            prevTrackButton.setEnabled(false);
-        }
-        else {
-            prevTrackButton.setEnabled(true);
-        }
 
-        if(currentIndex == (trackData.size()-1)) {
-            nextTrackButton.setEnabled(false);
-        }
-        else {
-            nextTrackButton.setEnabled(true);
-        }
 
-        //Toast.makeText(this, "playNextTrack currentIndex: " + currentIndex, Toast.LENGTH_SHORT).show();
+        Log.d("PlayerActivity", "playNextTrack Out" + currentIndex);
     }
 
     public void playTrackFrom(int progress) {
@@ -366,6 +354,12 @@ public class PlayerActivity extends Activity {
         playIntent.setAction(PlayerService.PLAYER_ACTION_SEEK);
         Bundle bundle = new Bundle();
 
+        if(progress == 0) {
+            bundle.putInt("seekTimeMsec", 1);
+        }
+        else {
+            bundle.putInt("seekTimeMsec", progress);
+        }
         bundle.putInt("seekTimeMsec", progress);
         bundle.putString("trackPreviewURL", trackPreviewURL);
         playIntent.putExtra("playerBundle", bundle);
@@ -373,4 +367,30 @@ public class PlayerActivity extends Activity {
         startService(playIntent);
     }
 
+    class SeekBarPlayerListener implements SeekBar.OnSeekBarChangeListener {
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar){
+            Log.d("PlayerActivity","onStopTrackingTouch");
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar){
+            Log.d("PlayerActivity","onStartTrackingTouch");
+        }
+
+        @Override
+        public void onProgressChanged(SeekBar seekBar,int progress,boolean fromUser){
+            if(fromUser){
+                Log.d("PlayerActivity","onProgressChanged:: "+progress);
+
+                seekBar.setProgress(progress);
+                trackCurrentTime.setText(formatTime(progress));
+                playTrackFrom(progress);
+            }
+
+        }
+    }
+
 }
+
