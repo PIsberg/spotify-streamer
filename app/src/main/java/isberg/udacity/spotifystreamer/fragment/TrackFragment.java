@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,7 +30,6 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import isberg.udacity.spotifystreamer.MainActivity;
-import isberg.udacity.spotifystreamer.activity.PlayerActivity;
 import isberg.udacity.spotifystreamer.R;
 import isberg.udacity.spotifystreamer.model.TrackData;
 import kaaes.spotify.webapi.android.SpotifyApi;
@@ -147,7 +147,7 @@ public class TrackFragment extends Fragment {
                 //actionBar.setTitle("player title"); //TODO something else what
                 actionBar.setDisplayHomeAsUpEnabled(true);
 
-                PlayerActivity playerFragment = new PlayerActivity();
+                PlayerFragment playerFragment = new PlayerFragment();
 
                 Bundle bundle = new Bundle();
 
@@ -155,18 +155,16 @@ public class TrackFragment extends Fragment {
                 bundle.putParcelableArrayList("trackData", trackDatas);
                 bundle.putInt("currentIndex", position);
                 bundle.putString("artistName", artistName);
-                /*
-                bundle.putString("trackPreviewURL", trackData.getPreviewUrl());
-                bundle.putString("albumCoverUrl", trackData.getAlbumCoverUrl());
-                bundle.putString("albumName", trackData.getAlbumName());
-                bundle.putString("trackName", trackData.getName());
-                bundle.putString("artistName", artistName);
-                bundle.putLong("trackDurationMs", trackData.getDurationMs());
-                */
 
-                Intent intentMain = new Intent(getActivity(), PlayerActivity.class);
-                intentMain.putExtra("trackBundle", bundle);
-                startActivity(intentMain);
+                playerFragment.setArguments(bundle);
+                FragmentTransaction playerFragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                playerFragmentTransaction.addToBackStack(null);
+
+                Fragment currentFragment = (Fragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.track_container);
+                playerFragmentTransaction.remove(currentFragment);
+
+                playerFragmentTransaction.add(R.id.player_container, playerFragment);
+                playerFragmentTransaction.commit();
             }
             });
         trackListView.setAdapter(trackAdapter);

@@ -134,7 +134,7 @@ public class ArtistFragment extends Fragment {
 
                 Fragment currentFragment = (Fragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.artist_container);
                 trackFragmentTransaction.remove(currentFragment);
-                trackFragmentTransaction.add(R.id.artist_container, trackFragment);
+                trackFragmentTransaction.add(R.id.track_container, trackFragment);
                 trackFragmentTransaction.commit();
             }
         });

@@ -1,19 +1,17 @@
-package isberg.udacity.spotifystreamer.activity;
+package isberg.udacity.spotifystreamer.fragment;
 
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -32,7 +30,7 @@ import isberg.udacity.spotifystreamer.R;
 import isberg.udacity.spotifystreamer.model.TrackData;
 import isberg.udacity.spotifystreamer.service.PlayerService;
 
-public class PlayerActivity extends Activity {
+public class PlayerFragment extends Fragment {
 
     private TextView artistNameTextView, albumNameTextView, trackNameTextView, trackCurrentTime, trackTotalTime;
     private ImageView albumCoverImageView;
@@ -49,34 +47,22 @@ public class PlayerActivity extends Activity {
 
     private final int MAX_TRACK_DURATION_DEMO = 30000;
 
-    private View.OnClickListener playOnClickListener;
-    private View.OnClickListener pauseOnClickListener;
+    private PlayButtonListener playOnClickListener;
+    private PauseButtonListener pauseOnClickListener;
 
     private enum LOCAL_STATE { PLAY, PAUSE };
 
-    public PlayerActivity() {
-    }
 
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
-        setContentView(R.layout.activity_player);
 
-        Bundle trackBundle = getIntent().getExtras().getBundle("trackBundle");
-        if (trackBundle != null) {
-            artistName = trackBundle.getString("artistName");
-            trackData = trackBundle.getParcelableArrayList("trackData");
-            currentIndex = trackBundle.getInt("currentIndex");
-        }
-
-        initGui();
-        populateGui(currentIndex);
-        LocalBroadcastManager.getInstance(this).registerReceiver(playerServiceCurrentPosMessageReceiver, new IntentFilter("PlayerActivity"));
+        //Bundle trackBundle = getActivity().getIntent().getExtras().getBundle("trackBundle");
     }
 
-    private void initGui() {
+    private void initGui(View rootView) {
         // Track info layout
-        LinearLayout innerLinearLayout1 = (LinearLayout) findViewById(R.id.linearlayout1);
+        LinearLayout innerLinearLayout1 = (LinearLayout) rootView.findViewById(R.id.linearlayout1);
 
         artistNameTextView = (TextView) innerLinearLayout1.findViewById(R.id.artistname_player_textview);
         albumNameTextView = (TextView) innerLinearLayout1.findViewById(R.id.albumname_player_textview);
@@ -85,14 +71,14 @@ public class PlayerActivity extends Activity {
 
 
         // Track playing layout
-        LinearLayout innerLinearLayout2 = (LinearLayout) findViewById(R.id.linearlayout2);
+        LinearLayout innerLinearLayout2 = (LinearLayout) rootView.findViewById(R.id.linearlayout2);
         trackPlayingSeekbar = (SeekBar) innerLinearLayout2.findViewById(R.id.track_playing_seekbar);
 
 
         trackPlayingSeekbar.setOnSeekBarChangeListener(new SeekBarPlayerListener());
 
         // Track playing info layout
-        RelativeLayout innerLinearLayout3 = (RelativeLayout) findViewById(R.id.linearlayout3); // TODO change name
+        RelativeLayout innerLinearLayout3 = (RelativeLayout) rootView.findViewById(R.id.linearlayout3);
         trackCurrentTime = (TextView) innerLinearLayout3.findViewById(R.id.track_currenttime_textview);
         trackCurrentTime.setText(getString(R.string.track_start_time));
 
@@ -100,25 +86,15 @@ public class PlayerActivity extends Activity {
 
 
         // Track player controls layout
-        LinearLayout innerLinearLayout4 = (LinearLayout) findViewById(R.id.linearlayout4);
+        LinearLayout innerLinearLayout4 = (LinearLayout) rootView.findViewById(R.id.linearlayout4);
 
         prevTrackButton = (ImageButton) innerLinearLayout4.findViewById(R.id.player_prevTrack_button);
         playTrackButton = (ImageButton) innerLinearLayout4.findViewById(R.id.player_play_button);
         nextTrackButton = (ImageButton) innerLinearLayout4.findViewById(R.id.player_nextTrack_button);
 
-        playOnClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playCurrentTrack(v);
-            }
-        };
-
-        pauseOnClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pauseCurrentTrack(v);
-            }
-        };
+        playOnClickListener = new PlayButtonListener();
+        pauseOnClickListener = new PauseButtonListener();
+        playTrackButton.setOnClickListener(playOnClickListener);
 
         //case when first item or last item is selected in list
         if(currentIndex == 0) {
@@ -139,18 +115,18 @@ public class PlayerActivity extends Activity {
 
     }
 
+    // used for e.g backpressed
     @Override
-    public void onBackPressed() {
-        //Toast.makeText(this, "onBackPressed", Toast.LENGTH_SHORT).show();
+    public void onDetach() {
+        super.onDetach();
+        Log.d("PlayerFragment", "onDetach");
 
         trackDurationMs = 0;
         currentIndex = 0;
 
-        Intent intent = new Intent(this, PlayerService.class);
+        Intent intent = new Intent(getActivity(), PlayerService.class);
         intent.setAction(PlayerService.PLAYER_ACTION_STOP);
-        startService(intent);
-
-        super.onBackPressed();
+        getActivity().startService(intent);
     }
 
     private void populateGui(int currentIndex) {
@@ -174,14 +150,14 @@ public class PlayerActivity extends Activity {
 
         trackTotalTime.setText(formatTime(trackDurationMs));
 
-        Picasso.with(this).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
+        Picasso.with(getActivity()).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
             @Override
             public void onSuccess() {
             }
 
             @Override
             public void onError() {
-                Log.d("PlayerActivity", "Piccasso error!");
+                Log.d("PlayerFragment", "Piccasso error!");
             }
         });
 
@@ -191,7 +167,7 @@ public class PlayerActivity extends Activity {
     private BroadcastReceiver playerServiceCurrentPosMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("PlayerActivity", "onReceive");
+            Log.d("PlayerFragment", "onReceive");
 
             updateButtonStates(currentIndex);
             int currentPositionInMs = intent.getIntExtra("currentPositionInMs", 0);
@@ -204,8 +180,18 @@ public class PlayerActivity extends Activity {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        View rootView = inflater.inflate(R.layout.activity_player, container, false);
-        Toast.makeText(this, "onCreateView ", Toast.LENGTH_SHORT).show();
+        if ( this.getArguments() != null) {
+            Bundle bundle = this.getArguments();
+            artistName = bundle.getString("artistName");
+            trackData = bundle.getParcelableArrayList("trackData");
+            currentIndex = bundle.getInt("currentIndex");
+        }
+
+        View rootView = inflater.inflate(R.layout.fragment_player, container, false);
+        initGui(rootView);
+
+        populateGui(currentIndex);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(playerServiceCurrentPosMessageReceiver, new IntentFilter("PlayerActivity"));
 
         return rootView;
     }
@@ -221,12 +207,12 @@ public class PlayerActivity extends Activity {
 
 
     public void playCurrentTrack(View view) {
-        Log.d("PlayerActivity", "playCurrentTrack");
+        Log.d("PlayerFragment", "playCurrentTrack");
 
         if(playTrackButton.getTag().equals(LOCAL_STATE.PAUSE)) {
-            Intent stopIntent = new Intent(this, PlayerService.class);
+            Intent stopIntent = new Intent(getActivity(), PlayerService.class);
             stopIntent.setAction(PlayerService.PLAYER_ACTION_STOP);
-            startService(stopIntent);
+            getActivity().startService(stopIntent);
         }
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
@@ -235,7 +221,7 @@ public class PlayerActivity extends Activity {
         playTrackButton.setTag(LOCAL_STATE.PLAY);
         playTrackButton.setOnClickListener(pauseOnClickListener);
 
-        Intent intent = new Intent(this, PlayerService.class);
+        Intent intent = new Intent(getActivity(), PlayerService.class);
         intent.setAction(PlayerService.PLAYER_ACTION_PLAY);
 
         Bundle bundle = new Bundle();
@@ -243,34 +229,34 @@ public class PlayerActivity extends Activity {
         bundle.putInt("seekTimeMsec", 1);
         intent.putExtra("playerBundle", bundle);
 
-        startService(intent);
+        getActivity().startService(intent);
     }
 
 
     public void pauseCurrentTrack(View view) {
-        Log.d("PlayerActivity", "pauseCurrentTrack");
+        Log.d("PlayerFragment", "pauseCurrentTrack");
 
         playTrackButton.setImageResource(android.R.drawable.ic_media_play);
         playTrackButton.setTag(LOCAL_STATE.PAUSE);
         playTrackButton.setOnClickListener(playOnClickListener);
 
-        Intent intent = new Intent(this, PlayerService.class);
+        Intent intent = new Intent(getActivity(), PlayerService.class);
         intent.setAction(PlayerService.PLAYER_ACTION_PAUSE);
 
-        startService(intent);
+        getActivity().startService(intent);
     }
 
     public void playPreviousTrack(View view) {
-        Log.d("PlayerActivity", "playPreviousTrack In" + currentIndex);
+        Log.d("PlayerFragment", "playPreviousTrack In" + currentIndex);
 
         int indexBefore = currentIndex;
         int prevIndex = (currentIndex-1);
 
         if(prevIndex >= 0 && prevIndex <= (trackData.size()-1) ) {
 
-            Intent intent = new Intent(this, PlayerService.class);
+            Intent intent = new Intent(getActivity(), PlayerService.class);
             intent.setAction(PlayerService.PLAYER_ACTION_STOP);
-            startService(intent);
+            getActivity().startService(intent);
 
             currentIndex = prevIndex;
             populateGui(currentIndex);
@@ -288,7 +274,7 @@ public class PlayerActivity extends Activity {
             currentIndex = indexBefore;
         }
 
-        Log.d("PlayerActivity", "playPreviousTrack Out" + currentIndex);
+        Log.d("PlayerFragment", "playPreviousTrack Out" + currentIndex);
 
     }
 
@@ -314,15 +300,15 @@ public class PlayerActivity extends Activity {
     }
 
     public void playNextTrack(View view) {
-        Log.d("PlayerActivity", "playNextTrack In" + currentIndex);
+        Log.d("PlayerFragment", "playNextTrack In" + currentIndex);
         int indexBefore = currentIndex;
         int nextIndex = (currentIndex+1);
 
         if(nextIndex >= 1 && nextIndex <= trackData.size() ) {
 
-            Intent intent = new Intent(this, PlayerService.class);
+            Intent intent = new Intent(getActivity(), PlayerService.class);
             intent.setAction(PlayerService.PLAYER_ACTION_STOP);
-            startService(intent);
+            getActivity().startService(intent);
 
             currentIndex = nextIndex;
             populateGui(currentIndex);
@@ -342,15 +328,15 @@ public class PlayerActivity extends Activity {
 
 
 
-        Log.d("PlayerActivity", "playNextTrack Out" + currentIndex);
+        Log.d("PlayerFragment", "playNextTrack Out" + currentIndex);
     }
 
     public void playTrackFrom(int progress) {
-        Log.d("PlayerActivity", "playTrackFrom");
+        Log.d("PlayerFragment", "playTrackFrom");
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
 
-        Intent playIntent = new Intent(this, PlayerService.class);
+        Intent playIntent = new Intent(getActivity(), PlayerService.class);
         playIntent.setAction(PlayerService.PLAYER_ACTION_SEEK);
         Bundle bundle = new Bundle();
 
@@ -364,25 +350,39 @@ public class PlayerActivity extends Activity {
         bundle.putString("trackPreviewURL", trackPreviewURL);
         playIntent.putExtra("playerBundle", bundle);
 
-        startService(playIntent);
+        getActivity().startService(playIntent);
     }
 
+
+    class PlayButtonListener implements ImageButton.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            playCurrentTrack(v);
+        }
+    }
+
+    class PauseButtonListener implements ImageButton.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            pauseCurrentTrack(v);
+        }
+    }
     class SeekBarPlayerListener implements SeekBar.OnSeekBarChangeListener {
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar){
-            Log.d("PlayerActivity","onStopTrackingTouch");
+            Log.d("PlayerFragment","onStopTrackingTouch");
         }
 
         @Override
         public void onStartTrackingTouch(SeekBar seekBar){
-            Log.d("PlayerActivity","onStartTrackingTouch");
+            Log.d("PlayerFragment","onStartTrackingTouch");
         }
 
         @Override
         public void onProgressChanged(SeekBar seekBar,int progress,boolean fromUser){
             if(fromUser){
-                Log.d("PlayerActivity","onProgressChanged:: "+progress);
+                Log.d("PlayerFragment","onProgressChanged:: "+progress);
 
                 seekBar.setProgress(progress);
                 trackCurrentTime.setText(formatTime(progress));

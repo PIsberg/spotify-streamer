@@ -48,7 +48,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             if (actionCommand.equals(PLAYER_ACTION_PLAY) && mediaPlayer == null) {
 
                 initMediaPlayer();
-
+                updateSeekTime(intent);
                 String url = getUrl(intent);
                 try {
                     mediaPlayer.setDataSource(url);

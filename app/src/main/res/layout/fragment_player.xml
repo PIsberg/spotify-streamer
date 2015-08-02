@@ -7,7 +7,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
-    tools:context="isberg.udacity.spotifystreamer.MainActivity.MusicFragment">
+    tools:context="isberg.udacity.spotifystreamer.MainActivity.PlayerFragment">
 
     <LinearLayout
         android:id="@+id/linearlayout1"
