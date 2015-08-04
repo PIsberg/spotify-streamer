@@ -1,6 +1,10 @@
 package isberg.udacity.spotifystreamer.fragment;
 
 
+import android.support.v4.app.Fragment;
+
+
+
 import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
@@ -41,7 +45,7 @@ import retrofit.RetrofitError;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Toast;
 
-public class TrackFragment extends Fragment {
+public class TrackDetailFragment extends Fragment {
 
     private ListView trackListView;
     private TrackAdapter trackAdapter;
@@ -49,7 +53,7 @@ public class TrackFragment extends Fragment {
     public static String ARTIST_NAME_KEY = "artistName";
     private final String TRACK_DATA_KEY = "trackData";
 
-    public TrackFragment() {
+    public TrackDetailFragment() {
     }
 
     @Override
@@ -159,11 +163,11 @@ public class TrackFragment extends Fragment {
                 FragmentTransaction playerFragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
 
                 // is tablet
-               if ( getActivity().findViewById(R.id.track_detail_container) != null) {
+                if ( getActivity().findViewById(R.id.track_detail_container) != null) {
 
                     playerFragment.setIsShownAsDialog(true);
                     playerFragment.show(getActivity().getFragmentManager(), "playerfragment");
-               }
+                }
 
                 else { // is phone
                     playerFragment.setIsShownAsDialog(false);
@@ -178,7 +182,7 @@ public class TrackFragment extends Fragment {
                 }
 
             }
-            });
+        });
         trackListView.setAdapter(trackAdapter);
 
         Bundle bundle = this.getArguments();
@@ -205,135 +209,5 @@ public class TrackFragment extends Fragment {
 
 
 }
-    class TrackAdapter extends ArrayAdapter<TrackData> {
 
-        private final String LOG_TAG = TrackAdapter.class.getSimpleName();
 
-        private ArrayList<TrackData> trackData;
-
-        public TrackAdapter(Context context, int resource, ArrayList<TrackData> trackData) {
-            super(context, resource, trackData);
-            this.trackData = trackData;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            TrackData trackData = getItem(position);
-
-            if (convertView == null) {
-                convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_track, parent, false);
-            }
-
-            ImageView imName = (ImageView) convertView.findViewById(R.id.list_item_albumcover_imageview);
-            if (trackData != null) {
-
-                if (!trackData.getAlbumCoverUrl().isEmpty()) {
-
-                    Picasso.with(getContext()).cancelRequest(imName);
-                    Picasso.with(getContext()).load(trackData.getAlbumCoverUrl()).into(imName, new Callback() {
-                        @Override
-                        public void onSuccess() {
-                        }
-
-                        @Override
-                        public void onError() {
-                            Log.d(LOG_TAG, "Piccasso error!");
-                        }
-                    });
-                }
-            }
-
-            TextView trackTextView = (TextView) convertView.findViewById(R.id.list_item_trackname_textview);
-            if (trackData != null && trackData.getName() != null) {
-                trackTextView.setText(trackData.getName());
-            }
-
-            TextView albumTextView = (TextView) convertView.findViewById(R.id.list_item_albumname_textview);
-            if (trackData != null && trackData.getAlbumName() != null) {
-                albumTextView.setText(trackData.getAlbumName());
-            }
-
-            return convertView;
-        }
-
-        public void setTrackData(ArrayList<TrackData> trackData) {
-            this.trackData = trackData;
-            notifyDataSetChanged();
-        }
-
-        public ArrayList<TrackData> getTrackData(){
-            return trackData;
-        }
-    }
-
-    class TrackSearchTask extends AsyncTask<String, Void, ArrayList<TrackData>> {
-        private final String LOG_TAG = TrackSearchTask.class.getSimpleName();
-
-        private TrackAdapterCallBack callback;
-
-        public TrackSearchTask(TrackAdapterCallBack callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        protected ArrayList<TrackData> doInBackground(String... params) {
-
-            if (params.length == 0) {
-                return null;
-            }
-
-            //TODO: initate somwhere else *once*
-            SpotifyApi api = new SpotifyApi();
-            SpotifyService spotifyService = api.getService();
-
-            TrackData[] array = null;
-
-            ArrayList<TrackData> tracks = new ArrayList<TrackData>();
-            Map<String, Object> queryParams = new HashMap<String, Object>();
-            queryParams.put("country", "SE");
-
-            Tracks musicTracks = null;
-            try {
-                musicTracks = spotifyService.getArtistTopTrack(params[0], queryParams);
-            } catch (RetrofitError error) {
-                Log.d(LOG_TAG, "Out of internet and stuff:" + error.getMessage() );
-                isCancelled();
-            }
-            if(musicTracks != null) {
-                ListIterator<Track> musicTracksIter = musicTracks.tracks.listIterator();
-
-                while (musicTracksIter.hasNext()) {
-                    Track track = musicTracksIter.next();
-                    String albumCoverUrl = "";
-
-                    if(track.album.images != null && track.album.images.size() > 0) {
-                        albumCoverUrl = track.album.images.get(0).url;
-                    }
-                    TrackData trackData = new TrackData(track.id, track.name, track.album.name, albumCoverUrl, track.preview_url,  track.duration_ms);
-
-                    Log.d(LOG_TAG, "Track name: " + track.name);
-                    Log.d(LOG_TAG, "PreviewUrl: " + track.preview_url);
-                    Log.d(LOG_TAG, "AlbumCoverUrl: " + albumCoverUrl);
-
-                    tracks.add(trackData);
-                }
-                /*
-                if (tracks.size() > 0) {
-                    array = tracks.toArray(new TrackData[tracks.size()]);
-                }
-                */
-            }
-            return tracks;
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<TrackData> result) {
-            callback.onCallBack(result);
-        }
-
-    }
-
-    interface TrackAdapterCallBack {
-        public void onCallBack(ArrayList<TrackData> result);
-    }

@@ -2,6 +2,7 @@ package isberg.udacity.spotifystreamer.fragment;
 
 import android.app.ActionBar;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -26,7 +27,9 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
+import isberg.udacity.spotifystreamer.MainActivity;
 import isberg.udacity.spotifystreamer.R;
+import isberg.udacity.spotifystreamer.TrackDetailActivity;
 import isberg.udacity.spotifystreamer.model.ArtistData;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -116,26 +119,46 @@ public class ArtistFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ArtistData itemContent = artistAdapter.getItem(position);
 
-                //Toast.makeText(getActivity(), "Clicked " + position + " with name" + itemContent.getArtist().name + " and id " + itemContent.getArtist().id, Toast.LENGTH_SHORT).show();
+                // is tablet
+                //if (getActivity().findViewById(R.id.track_detail_container) != null) {
+                if (getActivity() instanceof MainActivity) {
+                    Log.d("ArtistFragment", "tablet");
 
-                ActionBar actionBar = getActivity().getActionBar();
-                actionBar.setTitle(R.string.track_fragment_title);
-                actionBar.setSubtitle(itemContent.getArtistName());
-                actionBar.setDisplayHomeAsUpEnabled(true);
+                    TrackDetailFragment trackDetailFragment = new TrackDetailFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("artistId", itemContent.getArtistId());
+                    bundle.putString("artistName", itemContent.getArtistName());
+                    trackDetailFragment.setArguments(bundle);
 
-                TrackFragment trackFragment = new TrackFragment();
-                Bundle bundle = new Bundle();
-                bundle.putString("artistId", itemContent.getArtistId());
-                bundle.putString("artistName", itemContent.getArtistName());
-                trackFragment.setArguments(bundle);
+                    getActivity().getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.track_detail_container, trackDetailFragment, "trackdetailfragment")
+                            .commit();
 
-                FragmentTransaction trackFragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-                trackFragmentTransaction.addToBackStack(null);
+                }
+                else { //is phone
+                    //Toast.makeText(getActivity(), "Clicked " + position + " with name" + itemContent.getArtist().name + " and id " + itemContent.getArtist().id, Toast.LENGTH_SHORT).show();
+                    Log.d("ArtistFragment", "phone");
+                    ActionBar actionBar = getActivity().getActionBar();
+                    actionBar.setTitle(R.string.track_fragment_title);
+                    actionBar.setSubtitle(itemContent.getArtistName());
+                    actionBar.setDisplayHomeAsUpEnabled(true);
 
-                Fragment currentFragment = (Fragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.artist_container);
-                trackFragmentTransaction.remove(currentFragment);
-                trackFragmentTransaction.add(R.id.track_container, trackFragment);
-                trackFragmentTransaction.commit();
+                    TrackFragment trackFragment = new TrackFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("artistId", itemContent.getArtistId());
+                    bundle.putString("artistName", itemContent.getArtistName());
+                    trackFragment.setArguments(bundle);
+
+                    FragmentTransaction trackFragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                    trackFragmentTransaction.addToBackStack(null);
+
+                    Fragment currentFragment = (Fragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.artist_container);
+                    trackFragmentTransaction.remove(currentFragment);
+                    trackFragmentTransaction.add(R.id.track_container, trackFragment);
+                    trackFragmentTransaction.commit();
+                }
+
+
             }
         });
 

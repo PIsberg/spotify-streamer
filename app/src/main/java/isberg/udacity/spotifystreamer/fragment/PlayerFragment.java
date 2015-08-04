@@ -1,6 +1,7 @@
 package isberg.udacity.spotifystreamer.fragment;
 
 
+import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,7 +31,7 @@ import isberg.udacity.spotifystreamer.R;
 import isberg.udacity.spotifystreamer.model.TrackData;
 import isberg.udacity.spotifystreamer.service.PlayerService;
 
-public class PlayerFragment extends Fragment {
+public class PlayerFragment extends DialogFragment {
 
     private TextView artistNameTextView, albumNameTextView, trackNameTextView, trackCurrentTime, trackTotalTime;
     private ImageView albumCoverImageView;
@@ -52,12 +53,12 @@ public class PlayerFragment extends Fragment {
 
     private enum LOCAL_STATE { PLAY, PAUSE };
 
+    private boolean isShownAsDialog = false;
 
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
-
-        //Bundle trackBundle = getActivity().getIntent().getExtras().getBundle("trackBundle");
+        setShowsDialog(isShownAsDialog);
     }
 
     private void initGui(View rootView) {
@@ -150,7 +151,7 @@ public class PlayerFragment extends Fragment {
 
         trackTotalTime.setText(formatTime(trackDurationMs));
 
-        Picasso.with(getActivity()).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
+        Picasso.with(getActivity()).load(albumCoverUrl).fit().into(albumCoverImageView, new Callback() {
             @Override
             public void onSuccess() {
             }
@@ -186,6 +187,8 @@ public class PlayerFragment extends Fragment {
             trackData = bundle.getParcelableArrayList("trackData");
             currentIndex = bundle.getInt("currentIndex");
         }
+
+        setShowsDialog(isShownAsDialog);
 
         View rootView = inflater.inflate(R.layout.fragment_player, container, false);
         initGui(rootView);
@@ -353,6 +356,13 @@ public class PlayerFragment extends Fragment {
         getActivity().startService(playIntent);
     }
 
+    public boolean isShownAsDialog() {
+        return isShownAsDialog;
+    }
+
+    public void setIsShownAsDialog(boolean isShownAsDialog) {
+        this.isShownAsDialog = isShownAsDialog;
+    }
 
     class PlayButtonListener implements ImageButton.OnClickListener {
         @Override
