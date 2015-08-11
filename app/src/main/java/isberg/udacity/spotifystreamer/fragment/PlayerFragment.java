@@ -1,18 +1,20 @@
 package isberg.udacity.spotifystreamer.fragment;
 
 
-import android.app.DialogFragment;
+//import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -150,18 +152,35 @@ public class PlayerFragment extends DialogFragment {
         }
 
         trackTotalTime.setText(formatTime(trackDurationMs));
+        // is tablet
+        if ( getActivity().findViewById(R.id.track_detail_container) != null) {
+            Log.d("PlayerFragment", "tablet");
+            // method call with fit()
+            Picasso.with(getActivity()).load(albumCoverUrl).fit().into(albumCoverImageView, new Callback() {
+                @Override
+                public void onSuccess() {
+                }
 
-        Picasso.with(getActivity()).load(albumCoverUrl).fit().into(albumCoverImageView, new Callback() {
-            @Override
-            public void onSuccess() {
-            }
+                @Override
+                public void onError() {
+                    Log.d("PlayerFragment", "Piccasso error!");
+                }
+            });
+        }
+        else { // is phone
+            Log.d("PlayerFragment", "phone");
+            // method call without fit()
+            Picasso.with(getActivity()).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
+                @Override
+                public void onSuccess() {
+                }
 
-            @Override
-            public void onError() {
-                Log.d("PlayerFragment", "Piccasso error!");
-            }
-        });
-
+                @Override
+                public void onError() {
+                    Log.d("PlayerFragment", "Piccasso error!");
+                }
+            });
+        }
         trackPlayingSeekbar.setMax((int) trackDurationMs);
     }
 

@@ -120,8 +120,7 @@ public class ArtistFragment extends Fragment {
                 ArtistData itemContent = artistAdapter.getItem(position);
 
                 // is tablet
-                //if (getActivity().findViewById(R.id.track_detail_container) != null) {
-                if (getActivity() instanceof MainActivity) {
+                if (getActivity().findViewById(R.id.track_detail_container) != null) {
                     Log.d("ArtistFragment", "tablet");
 
                     TrackDetailFragment trackDetailFragment = new TrackDetailFragment();

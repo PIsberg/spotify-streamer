@@ -7,7 +7,7 @@
         android:id="@+id/artist_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="isberg.udacity.spotifystreamer.MainActivity"
+        tools:context="isberg.udacity.spotifystreamer.fragment.ArtistFragment"
         tools:ignore="MergeRootFrame" />
 
     <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -15,7 +15,7 @@
         android:id="@+id/track_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="isberg.udacity.spotifystreamer.MainActivity"
+        tools:context="isberg.udacity.spotifystreamer.fragment.TrackFragment"
         tools:ignore="MergeRootFrame" />
 
     <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"

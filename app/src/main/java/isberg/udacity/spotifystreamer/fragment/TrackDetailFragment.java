@@ -1,17 +1,10 @@
 package isberg.udacity.spotifystreamer.fragment;
 
 
-import android.support.v4.app.Fragment;
-
-
-
 import android.app.ActionBar;
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,29 +14,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
-import android.widget.TextView;
 
-import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.ListIterator;
-import java.util.Map;
 
 import isberg.udacity.spotifystreamer.MainActivity;
 import isberg.udacity.spotifystreamer.R;
 import isberg.udacity.spotifystreamer.model.TrackData;
-import kaaes.spotify.webapi.android.SpotifyApi;
-import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.Track;
-import kaaes.spotify.webapi.android.models.Tracks;
-import retrofit.RetrofitError;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Toast;
 
 public class TrackDetailFragment extends Fragment {
 
@@ -58,6 +38,7 @@ public class TrackDetailFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle bundle) {
+        Log.d("TrackDetailFragment", "onCreate");
         super.onCreate(bundle);
         setHasOptionsMenu(true);
         //Picasso.with(getActivity()).setIndicatorsEnabled(true);
@@ -74,6 +55,7 @@ public class TrackDetailFragment extends Fragment {
         trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, trackDataList);
 
         setTrackAdapter(trackAdapter);
+
     }
 
     public void setTrackAdapter(TrackAdapter trackAdapter) {
@@ -133,7 +115,7 @@ public class TrackDetailFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
+        Log.d("TrackDetailFragment", "onCreateView");
         trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, new ArrayList<TrackData>());
 
         View rootView = inflater.inflate(R.layout.fragment_track, container, false);
@@ -146,7 +128,7 @@ public class TrackDetailFragment extends Fragment {
                 TrackData trackData = (TrackData) adapter.getItemAtPosition(position);
                 ArrayList<TrackData> trackDatas = trackAdapter.getTrackData();
 
-                Toast.makeText(getActivity(), "Pressed item " + trackData.getId() + "with pos " + position, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getActivity(), "Pressed item " + trackData.getId() + "with pos " + position, Toast.LENGTH_SHORT).show();
 
                 ActionBar actionBar = getActivity().getActionBar();
                 //actionBar.setTitle("player title"); //TODO something else what
@@ -163,20 +145,23 @@ public class TrackDetailFragment extends Fragment {
                 FragmentTransaction playerFragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
 
                 // is tablet
-                if ( getActivity().findViewById(R.id.track_detail_container) != null) {
-
+                if (getActivity().findViewById(R.id.track_detail_container) != null) {
+                    Log.d("TrackDetailFragment", "tablet");
                     playerFragment.setIsShownAsDialog(true);
-                    playerFragment.show(getActivity().getFragmentManager(), "playerfragment");
+                    //works with one not appv4
+                    //playerFragment.show(getActivity().getFragmentManager(), "playerfragment");
+                    playerFragment.show(getActivity().getSupportFragmentManager(), "playerfragment");
                 }
-
                 else { // is phone
+                    Log.d("TrackDetailFragment", "phone");
                     playerFragment.setIsShownAsDialog(false);
                     playerFragmentTransaction.addToBackStack(null);
 
                     Fragment currentFragment = (Fragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.track_container);
                     //playerFragmentTransaction.remove(currentFragment);
                     //playerFragmentTransaction.add(R.id.player_container, playerFragment);
-                    playerFragmentTransaction.replace(R.id.track_container, currentFragment);
+
+                    playerFragmentTransaction.replace(R.id.track_container, playerFragment);
                     playerFragmentTransaction.addToBackStack(null);
                     playerFragmentTransaction.commit();
                 }
