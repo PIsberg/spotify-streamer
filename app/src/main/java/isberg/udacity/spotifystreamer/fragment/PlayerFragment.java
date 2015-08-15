@@ -63,7 +63,7 @@ public class PlayerFragment extends DialogFragment {
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setShowsDialog(isShownAsDialog);
-    }
+     }
 
     private void initGui(View rootView) {
         // Track info layout
@@ -160,35 +160,18 @@ public class PlayerFragment extends DialogFragment {
         }
 
         trackTotalTime.setText(formatTime(trackDurationMs));
-        // is tablet
-        if ( getActivity().findViewById(R.id.track_detail_container) != null) {
-            Log.d("PlayerFragment", "tablet");
-            // method call with fit()
-            Picasso.with(getActivity()).load(albumCoverUrl).fit().into(albumCoverImageView, new Callback() {
-                @Override
-                public void onSuccess() {
-                }
 
-                @Override
-                public void onError() {
-                    Log.d("PlayerFragment", "Piccasso error!");
-                }
-            });
-        }
-        else { // is phone
-            Log.d("PlayerFragment", "phone");
-            // method call without fit()
-            Picasso.with(getActivity()).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
-                @Override
-                public void onSuccess() {
-                }
+        Picasso.with(getActivity()).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
+            @Override
+            public void onSuccess() {
+            }
 
-                @Override
-                public void onError() {
-                    Log.d("PlayerFragment", "Piccasso error!");
-                }
-            });
-        }
+            @Override
+            public void onError() {
+                Log.d("PlayerFragment", "Piccasso error!");
+            }
+        });
+
         trackPlayingSeekbar.setMax((int) trackDurationMs);
     }
 

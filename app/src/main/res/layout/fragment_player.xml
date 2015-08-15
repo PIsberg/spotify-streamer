@@ -8,6 +8,8 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
     android:tag="playerfragment"
+    android:minWidth="600dp"
+    android:minHeight="600dp"
     tools:context="isberg.udacity.spotifystreamer.fragment.PlayerFragment">
 
     <LinearLayout

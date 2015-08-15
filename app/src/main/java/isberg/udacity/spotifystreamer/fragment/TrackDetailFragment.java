@@ -173,13 +173,14 @@ public class TrackDetailFragment extends Fragment {
 
         Bundle bundle = this.getArguments();
         String artistId = null;
-        if(bundle.getString("artistId") != null) {
-            artistId = bundle.getString("artistId");
+        if(bundle != null) {
+            if (bundle.getString("artistId") != null) {
+                artistId = bundle.getString("artistId");
+            }
+            if (bundle.getString("artistName") != null) {
+                this.artistName = bundle.getString("artistName");
+            }
         }
-        if(bundle.getString("artistName") != null) {
-            this.artistName = bundle.getString("artistName");
-        }
-
         TrackSearchTask trackSearchTask = new TrackSearchTask(new TrackAdapterCallBack() {
 
             @Override
