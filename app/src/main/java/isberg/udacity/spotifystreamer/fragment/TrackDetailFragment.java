@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -189,6 +190,10 @@ public class TrackDetailFragment extends Fragment {
                         trackAdapter.add(trackData);
                     }
                     trackAdapter.notifyDataSetChanged();
+                }
+
+                if(trackAdapter.isEmpty()) {
+                    Toast.makeText(getActivity(), R.string.track_noresult_toast, Toast.LENGTH_SHORT).show();
                 }
             }
         });
