@@ -215,6 +215,8 @@ public class PlayerFragment extends DialogFragment {
         populateGui(currentIndex);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(playerServiceCurrentPosMessageReceiver, new IntentFilter("PlayerActivity"));
 
+        playCurrentTrack(rootView);
+
         return rootView;
     }
 
