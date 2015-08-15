@@ -52,6 +52,8 @@ public class PlayerFragment extends DialogFragment {
 
     private PlayButtonListener playOnClickListener;
     private PauseButtonListener pauseOnClickListener;
+    private NextButtonListener nextButtonListener;
+    private PreviousButtonListener prevButtonListener;
 
     private enum LOCAL_STATE { PLAY, PAUSE };
 
@@ -98,6 +100,12 @@ public class PlayerFragment extends DialogFragment {
         playOnClickListener = new PlayButtonListener();
         pauseOnClickListener = new PauseButtonListener();
         playTrackButton.setOnClickListener(playOnClickListener);
+
+        nextButtonListener = new NextButtonListener();
+        nextTrackButton.setOnClickListener(nextButtonListener);
+
+        prevButtonListener = new PreviousButtonListener();
+        prevTrackButton.setOnClickListener(prevButtonListener);
 
         //case when first item or last item is selected in list
         if(currentIndex == 0) {
@@ -392,6 +400,20 @@ public class PlayerFragment extends DialogFragment {
         }
     }
 
+    class NextButtonListener implements ImageButton.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            playNextTrack(v);
+        }
+    }
+
+
+    class PreviousButtonListener implements ImageButton.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            playPreviousTrack(v);
+        }
+    }
     class PauseButtonListener implements ImageButton.OnClickListener {
         @Override
         public void onClick(View v) {
