@@ -171,8 +171,13 @@ public class TrackDetailFragment extends Fragment {
         trackListView.setAdapter(trackAdapter);
 
         Bundle bundle = this.getArguments();
-        String artistId = bundle.getString("artistId");
-        this.artistName = bundle.getString("artistName");
+        String artistId = null;
+        if(bundle.getString("artistId") != null) {
+            artistId = bundle.getString("artistId");
+        }
+        if(bundle.getString("artistName") != null) {
+            this.artistName = bundle.getString("artistName");
+        }
 
         TrackSearchTask trackSearchTask = new TrackSearchTask(new TrackAdapterCallBack() {
 
@@ -187,8 +192,9 @@ public class TrackDetailFragment extends Fragment {
                 }
             }
         });
-
-        trackSearchTask.execute(artistId);
+        if(artistId != null) {
+            trackSearchTask.execute(artistId);
+        }
         return rootView;
     }
 
