@@ -30,7 +30,7 @@ Precondition:
 
 # Known problems/glitches/bugs:
 
-#1 Emulator gets out of the picture
+1 Emulator gets out of the picture
 
 First Select the window either by Alt-Tab or Click clicking it
 Press Alt & Space keys together
