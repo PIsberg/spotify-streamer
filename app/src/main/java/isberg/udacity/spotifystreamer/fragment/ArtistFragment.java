@@ -1,12 +1,10 @@
 package isberg.udacity.spotifystreamer.fragment;
 
-import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
+import androidx.fragment.app.Fragment; // AndroidX
+import androidx.fragment.app.FragmentTransaction; // AndroidX
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -25,23 +23,21 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.ListIterator;
+import java.util.List;
 
-import isberg.udacity.spotifystreamer.MainActivity;
 import isberg.udacity.spotifystreamer.R;
-import isberg.udacity.spotifystreamer.TrackDetailActivity;
+import isberg.udacity.spotifystreamer.api.SpotifyClient;
 import isberg.udacity.spotifystreamer.model.ArtistData;
-import kaaes.spotify.webapi.android.SpotifyApi;
-import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.Artist;
-import kaaes.spotify.webapi.android.models.ArtistsPager;
-import retrofit.RetrofitError;
+import isberg.udacity.spotifystreamer.model.SpotifyArtistSearchResponse;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class ArtistFragment extends Fragment {
     private ListView listView;
     private EditText searchArtistEditText;
 
     private final String ARTIST_DATA_KEY = "artistData";
+    private final String LOG_TAG = ArtistFragment.class.getSimpleName();
 
     private ArtistAdapter artistAdapter;
 
@@ -53,8 +49,8 @@ public class ArtistFragment extends Fragment {
         super.onCreate(bundle);
         setHasOptionsMenu(true);
 
-        //Picasso.with(getActivity()).setIndicatorsEnabled(true);
-        Picasso.with(getActivity()).setLoggingEnabled(true);
+        //Picasso.get().setIndicatorsEnabled(true);
+        Picasso.get().setLoggingEnabled(true);
 
         ArrayList<ArtistData> artistDataList = new ArrayList<ArtistData>();
 
@@ -80,7 +76,9 @@ public class ArtistFragment extends Fragment {
 
         if(bundle != null && bundle.containsKey(ARTIST_DATA_KEY)) {
             artistDataList = bundle.getParcelableArrayList(ARTIST_DATA_KEY);
-            Log.d("onViewStateRestored", artistDataList.get(0).getArtistName());
+            if (!artistDataList.isEmpty()) {
+                Log.d("onViewStateRestored", artistDataList.get(0).getArtistName());
+            }
             artistAdapter.setArtistData(artistDataList);
         }
 
@@ -91,7 +89,9 @@ public class ArtistFragment extends Fragment {
     public void onSaveInstanceState(Bundle bundle) {
 
         if(artistAdapter != null && !artistAdapter.isEmpty()) {
-            Log.d("onSaveInstanceState", artistAdapter.getArtistData().get(0).getArtistName());
+            if (!artistAdapter.getArtistData().isEmpty()) {
+                Log.d("onSaveInstanceState", artistAdapter.getArtistData().get(0).getArtistName());
+            }
             bundle.putParcelableArrayList(ARTIST_DATA_KEY, artistAdapter.getArtistData());
         }
         super.onSaveInstanceState(bundle);
@@ -135,12 +135,13 @@ public class ArtistFragment extends Fragment {
 
                 }
                 else { //is phone
-                    //Toast.makeText(getActivity(), "Clicked " + position + " with name" + itemContent.getArtist().name + " and id " + itemContent.getArtist().id, Toast.LENGTH_SHORT).show();
                     Log.d("ArtistFragment", "phone");
-                    ActionBar actionBar = getActivity().getActionBar();
-                    actionBar.setTitle(R.string.track_fragment_title);
-                    actionBar.setSubtitle(itemContent.getArtistName());
-                    actionBar.setDisplayHomeAsUpEnabled(true);
+                    androidx.appcompat.app.ActionBar actionBar = ((androidx.appcompat.app.AppCompatActivity)getActivity()).getSupportActionBar();
+                    if (actionBar != null) {
+                        actionBar.setTitle(R.string.track_fragment_title);
+                        actionBar.setSubtitle(itemContent.getArtistName());
+                        actionBar.setDisplayHomeAsUpEnabled(true);
+                    }
 
                     TrackFragment trackFragment = new TrackFragment();
                     Bundle bundle = new Bundle();
@@ -151,13 +152,13 @@ public class ArtistFragment extends Fragment {
                     FragmentTransaction trackFragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
                     trackFragmentTransaction.addToBackStack(null);
 
-                    Fragment currentFragment = (Fragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.artist_container);
-                    trackFragmentTransaction.remove(currentFragment);
+                    Fragment currentFragment = getActivity().getSupportFragmentManager().findFragmentById(R.id.artist_container);
+                    if (currentFragment != null) {
+                        trackFragmentTransaction.remove(currentFragment);
+                    }
                     trackFragmentTransaction.add(R.id.track_container, trackFragment);
                     trackFragmentTransaction.commit();
                 }
-
-
             }
         });
 
@@ -177,20 +178,50 @@ public class ArtistFragment extends Fragment {
         return rootView;
     }
 
-
-    public ArtistSearchTask getInstance() {
-        return new ArtistSearchTask(new ArtistAdapterCallBack() {
-            public void onCallBack(ArtistData[] result) {
-                if (result != null) {
-                    artistAdapter.clear();
-                    for (ArtistData artistData : result) {
-                        artistAdapter.add(artistData);
+    public void searchArtists(String query) {
+        SpotifyClient.getInstance().fetchAccessToken(new SpotifyClient.TokenCallback() {
+            @Override
+            public void onSuccess(String token) {
+                SpotifyClient.getInstance().getService().searchArtists("Bearer " + token, query).enqueue(new retrofit2.Callback<SpotifyArtistSearchResponse>() {
+                    @Override
+                    public void onResponse(Call<SpotifyArtistSearchResponse> call, Response<SpotifyArtistSearchResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().artists != null) {
+                            List<SpotifyArtistSearchResponse.SpotifyArtist> items = response.body().artists.items;
+                            ArrayList<ArtistData> artistDataList = new ArrayList<>();
+                            if (items != null) {
+                                for (SpotifyArtistSearchResponse.SpotifyArtist artist : items) {
+                                    String imageUrl = null;
+                                    if (artist.images != null && !artist.images.isEmpty()) {
+                                        imageUrl = artist.images.get(0).url; // Use first image
+                                    }
+                                    artistDataList.add(new ArtistData(artist.id, artist.name, imageUrl));
+                                }
+                            }
+                            
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    artistAdapter.clear();
+                                    artistAdapter.addAll(artistDataList);
+                                    if(artistAdapter.isEmpty()) {
+                                        Toast.makeText(getActivity(), R.string.artist_noresult_toast, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        } else {
+                            Log.e(LOG_TAG, "Search failed: " + response.code());
+                        }
                     }
-                }
 
-                if(artistAdapter.isEmpty()) {
-                    Toast.makeText(getActivity(), R.string.artist_noresult_toast, Toast.LENGTH_SHORT).show();
-                }
+                    @Override
+                    public void onFailure(Call<SpotifyArtistSearchResponse> call, Throwable t) {
+                         Log.e(LOG_TAG, "Search error", t);
+                    }
+                });
+            }
+
+            @Override
+            public void onError() {
+                 Log.e(LOG_TAG, "Token fetch failed");
             }
         });
     }
@@ -212,10 +243,8 @@ class SearchArtistTextWatcher implements TextWatcher {
     }
 
     public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-        if (s != null && s.length() > 0) { // prevent same search muliple times like on rotation
-            //TODO: better way of doing this?
-            artistFragment.getInstance().execute(s.toString());
+        if (s != null && s.length() > 0) { 
+            artistFragment.searchArtists(s.toString());
         }
     }
 }
@@ -233,10 +262,7 @@ class ArtistAdapter extends ArrayAdapter<ArtistData> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        // Get the data item for this position
         ArtistData artistData = getItem(position);
-
-        // Check if an existing view is being reused, otherwise inflate the view
 
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
@@ -247,22 +273,21 @@ class ArtistAdapter extends ArrayAdapter<ArtistData> {
 
             if(artistData.getArtistCoverUrl() != null ) {
 
-                Picasso.with(getContext()).cancelRequest(imName);
-                Picasso.with(getContext()).load(artistData.getArtistCoverUrl()).into(imName, new Callback() {
+                Picasso.get().cancelRequest(imName);
+                Picasso.get().load(artistData.getArtistCoverUrl()).into(imName, new Callback() {
                     @Override
                     public void onSuccess() {
                     }
 
                     @Override
-                    public void onError() {
-                        Log.d(LOG_TAG, "Piccasso error!");
+                    public void onError(Exception e) {
+                        Log.d(LOG_TAG, "Piccasso error!" + e.getMessage());
                     }
                 });
 
             }
         }
 
-        // Lookup view for data population
         TextView tvName = (TextView) convertView.findViewById(R.id.list_item_artist_textview);
         if(artistData != null && artistData.getArtistName() != null) {
             tvName.setText(artistData.getArtistName());
@@ -279,87 +304,6 @@ class ArtistAdapter extends ArrayAdapter<ArtistData> {
         this.artistData = artistData;
         notifyDataSetChanged();
     }
-
 }
 
-class ArtistSearchTask extends AsyncTask<String, Void, ArtistData[]> {
-
-    private final String LOG_TAG = ArtistSearchTask.class.getSimpleName();
-    private ArtistAdapterCallBack callback;
-    private ArtistData[] array = null;
-    private String artistId;
-
-    public ArtistSearchTask(ArtistAdapterCallBack callback) {
-        this.callback = callback;
-    }
-
-    @Override
-    protected ArtistData[] doInBackground(String... params) {
-
-        if (params.length == 0) {
-            return null;
-        }
-        //TODO: initate somwhere else *once*
-        SpotifyApi api = new SpotifyApi();
-
-        SpotifyService spotifyService = api.getService();
-        ArtistsPager artistsPager = null;
-        try {
-            artistsPager = spotifyService.searchArtists(params[0]);
-        } catch (RetrofitError error) {
-            Log.d(LOG_TAG, "Out of internet and stuff:" + error.getMessage());
-            isCancelled();
-        }
-        if (artistsPager != null) {
-            array = processArtistData(artistsPager);
-        }
-
-        return array;
-    }
-    @Override
-    protected void onPostExecute(ArtistData[] result) {
-        callback.onCallBack(result);
-    }
-
-
-    private ArtistData[] processArtistData(ArtistsPager artistsPager) {
-
-        ArtistData[] array = null;
-
-        ListIterator<Artist> artistIter = artistsPager.artists.items.listIterator();
-
-        ArrayList<ArtistData> listViewData = new ArrayList<ArtistData>();
-
-        while (artistIter.hasNext()) {
-            Artist artist = artistIter.next();
-
-            String artistCoverUrl = null;
-
-            if (artist.images.size() > 0) {
-                artistCoverUrl = artist.images.get(0).url;
-            }
-            ArtistData artistData = new ArtistData(artist.id, artist.name, artistCoverUrl);
-
-            //  artistData.setArtistArt(artistArt);
-            Log.d(artist.name, "Artist");
-            if (artist.images != null && artist.images.size() > 0) {
-                Log.d(artist.images.get(0).url, LOG_TAG + "ArtistArt URL");
-            } else {
-                Log.d("No artist art", LOG_TAG + "ArtistArt URL");
-            }
-
-            listViewData.add(artistData);
-        }
-
-        if (listViewData.size() > 0) {
-            array = listViewData.toArray(new ArtistData[listViewData.size()]);
-        }
-        return array;
-    }
-}
-
-
-interface ArtistAdapterCallBack{
-    public void onCallBack(ArtistData[] result);
-}
 

@@ -1,40 +1,58 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
+
+
+def env = new Properties()
+def envFile = rootProject.file(".env.local")
+if (envFile.exists()) {
+    env.load(new FileInputStream(envFile))
+}
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "21.1.2"
+    namespace 'isberg.udacity.spotifystreamer'
+    compileSdk 34
 
     defaultConfig {
         applicationId "isberg.udacity.spotifystreamer"
-        minSdkVersion 15
-        targetSdkVersion 20
+        minSdk 24
+        targetSdk 34
         versionCode 1
         versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        buildConfigField "String", "SPOTIFY_CLIENT_ID", "\"${env.getProperty('SPOTIFY_CLIENT_ID', '')}\""
+        buildConfigField "String", "SPOTIFY_CLIENT_SECRET", "\"${env.getProperty('SPOTIFY_CLIENT_SECRET', '')}\""
     }
+
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-}
-repositories {
-    flatDir {
-        dirs 'libs'
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildFeatures {
+        buildConfig true
     }
 }
 
-
-
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:20.0.0'
-    compile 'com.android.support:support-v4:20.0.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.11.0'
 
-    // Spotify webservice dependencies
-    compile(name:'spotify-web-api-android-0.1.0', ext:'aar')
-    compile 'com.squareup.retrofit:retrofit:1.9.0'
-    compile 'com.squareup.okhttp:okhttp:2.2.0'
+    // Networking
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
 
-    compile 'com.squareup.picasso:picasso:2.5.2'
+    // Images
+    implementation 'com.squareup.picasso:picasso:2.8'
+    
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
 }

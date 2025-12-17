@@ -3,7 +3,7 @@ package isberg.udacity.spotifystreamer.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import kaaes.spotify.webapi.android.models.Artist;
+
 
 public class ArtistData implements Parcelable {
 

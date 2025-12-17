@@ -1,13 +1,12 @@
 package isberg.udacity.spotifystreamer.fragment;
 
-
-import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity; // AndroidX
+import androidx.fragment.app.Fragment; // AndroidX
+import androidx.fragment.app.FragmentTransaction; // AndroidX
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -27,17 +26,16 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.ListIterator;
+import java.util.List;
 import java.util.Map;
 
 import isberg.udacity.spotifystreamer.MainActivity;
 import isberg.udacity.spotifystreamer.R;
+import isberg.udacity.spotifystreamer.api.SpotifyClient;
+import isberg.udacity.spotifystreamer.model.SpotifyTracksResponse;
 import isberg.udacity.spotifystreamer.model.TrackData;
-import kaaes.spotify.webapi.android.SpotifyApi;
-import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.Track;
-import kaaes.spotify.webapi.android.models.Tracks;
-import retrofit.RetrofitError;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class TrackFragment extends Fragment {
 
@@ -55,15 +53,17 @@ public class TrackFragment extends Fragment {
         Log.d("TrackFragment", "onCreate");
         super.onCreate(bundle);
         setHasOptionsMenu(true);
-        //Picasso.with(getActivity()).setIndicatorsEnabled(true);
-        Picasso.with(getActivity()).setLoggingEnabled(true);
+        //Picasso.get().setIndicatorsEnabled(true);
+        Picasso.get().setLoggingEnabled(true);
 
         ArrayList<TrackData> trackDataList = new ArrayList<TrackData>();
 
         setRetainInstance(true);
         if(bundle != null && bundle.containsKey(TRACK_DATA_KEY)) {
             trackDataList = bundle.getParcelableArrayList(TRACK_DATA_KEY);
-            Log.d("Track.onCreate", trackDataList.get(0).getName());
+            if (!trackDataList.isEmpty()) {
+                Log.d("Track.onCreate", trackDataList.get(0).getName());
+            }
         }
 
         trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, trackDataList);
@@ -89,7 +89,9 @@ public class TrackFragment extends Fragment {
 
         if(bundle != null && bundle.containsKey(TRACK_DATA_KEY)) {
             trackDataList = bundle.getParcelableArrayList(TRACK_DATA_KEY);
-            Log.d("onViewStateRestored", trackDataList.get(0).getAlbumName());
+            if (!trackDataList.isEmpty()) {
+                Log.d("onViewStateRestored", trackDataList.get(0).getAlbumName());
+            }
             trackAdapter.setTrackData(trackDataList);
         }
 
@@ -99,7 +101,9 @@ public class TrackFragment extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle bundle) {
         if(trackAdapter != null && !trackAdapter.isEmpty()) {
-            Log.d("Artist.onSaveInstState", trackAdapter.getTrackData().get(0).getName());
+            if (!trackAdapter.getTrackData().isEmpty()) {
+                Log.d("Artist.onSaveInstState", trackAdapter.getTrackData().get(0).getName());
+            }
             bundle.putParcelableArrayList(TRACK_DATA_KEY, trackAdapter.getTrackData());
         }
         super.onSaveInstanceState(bundle);
@@ -107,19 +111,21 @@ public class TrackFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
+        if (item.getItemId() == android.R.id.home) {
+            //Toast.makeText(getActivity(), "Pressed back", Toast.LENGTH_SHORT).show();
 
-                //Toast.makeText(getActivity(), "Pressed back", Toast.LENGTH_SHORT).show();
-
+            ActionBar actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
+            if (actionBar != null && actionBar.getSubtitle() != null) {
                 Intent intent = new Intent(getActivity(), MainActivity.class);
-                intent.putExtra(ARTIST_NAME_KEY, getActivity().getActionBar().getSubtitle());
+                intent.putExtra(ARTIST_NAME_KEY, actionBar.getSubtitle());
                 startActivity(intent);
+            } else {
+                 getActivity().onBackPressed();
+            }
 
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
     //TODO:
     private String artistName;
@@ -144,9 +150,11 @@ public class TrackFragment extends Fragment {
 
                 //Toast.makeText(getActivity(), "Pressed item " + trackData.getId() + "with pos " + position, Toast.LENGTH_SHORT).show();
 
-                ActionBar actionBar = getActivity().getActionBar();
+                ActionBar actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
                 //actionBar.setTitle("player title"); //TODO something else what
-                actionBar.setDisplayHomeAsUpEnabled(true);
+                if (actionBar != null) {
+                    actionBar.setDisplayHomeAsUpEnabled(true);
+                }
 
                 PlayerFragment playerFragment = new PlayerFragment();
                 Bundle bundle = new Bundle();
@@ -186,25 +194,56 @@ public class TrackFragment extends Fragment {
         trackListView.setAdapter(trackAdapter);
 
         Bundle bundle = this.getArguments();
-        String artistId = bundle.getString("artistId");
-        this.artistName = bundle.getString("artistName");
+        if (bundle != null) {
+            String artistId = bundle.getString("artistId");
+            this.artistName = bundle.getString("artistName");
 
-        TrackSearchTask trackSearchTask = new TrackSearchTask(new TrackAdapterCallBack() {
+            getTracks(artistId);
+        }
+        return rootView;
+    }
+
+    private void getTracks(String artistId) {
+        SpotifyClient.getInstance().fetchAccessToken(new SpotifyClient.TokenCallback() {
+            @Override
+            public void onSuccess(String token) {
+                SpotifyClient.getInstance().getService().getArtistTopTracks("Bearer " + token, artistId, "SE").enqueue(new retrofit2.Callback<SpotifyTracksResponse>() {
+                    @Override
+                    public void onResponse(Call<SpotifyTracksResponse> call, Response<SpotifyTracksResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().tracks != null) {
+                             final ArrayList<TrackData> tracks = new ArrayList<>();
+                             for(SpotifyTracksResponse.SpotifyTrack track : response.body().tracks) {
+                                  String albumCoverUrl = "";
+                                  if(track.album != null && track.album.images != null && !track.album.images.isEmpty()) {
+                                      albumCoverUrl = track.album.images.get(0).url;
+                                  }
+                                  tracks.add(new TrackData(track.id, track.name, track.album != null ? track.album.name : "", albumCoverUrl, track.preview_url, track.duration_ms));
+                             }
+
+                             if(getActivity() != null) {
+                                 getActivity().runOnUiThread(() -> {
+                                     trackAdapter.clear();
+                                     trackAdapter.addAll(tracks);
+                                     trackAdapter.notifyDataSetChanged();
+                                 });
+                             }
+                        } else {
+                            Log.e("TrackFragment", "Error getting tracks");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<SpotifyTracksResponse> call, Throwable t) {
+                         Log.e("TrackFragment", "Failure getting tracks", t);
+                    }
+                });
+            }
 
             @Override
-            public void onCallBack(ArrayList<TrackData> result) {
-                if (result != null) {
-                    trackAdapter.clear();
-                    for (TrackData trackData : result) {
-                        trackAdapter.add(trackData);
-                    }
-                    trackAdapter.notifyDataSetChanged();
-                }
+            public void onError() {
+                 Log.e("TrackFragment", "Token error");
             }
         });
-
-        trackSearchTask.execute(artistId);
-        return rootView;
     }
 
 
@@ -232,17 +271,17 @@ public class TrackFragment extends Fragment {
             ImageView imName = (ImageView) convertView.findViewById(R.id.list_item_albumcover_imageview);
             if (trackData != null) {
 
-                if (!trackData.getAlbumCoverUrl().isEmpty()) {
+                if (trackData.getAlbumCoverUrl() != null && !trackData.getAlbumCoverUrl().isEmpty()) {
 
-                    Picasso.with(getContext()).cancelRequest(imName);
-                    Picasso.with(getContext()).load(trackData.getAlbumCoverUrl()).into(imName, new Callback() {
+                    Picasso.get().cancelRequest(imName);
+                    Picasso.get().load(trackData.getAlbumCoverUrl()).into(imName, new Callback() {
                         @Override
                         public void onSuccess() {
                         }
 
                         @Override
-                        public void onError() {
-                            Log.d(LOG_TAG, "Piccasso error!");
+                        public void onError(Exception e) {
+                            Log.d(LOG_TAG, "Piccasso error!" + e.getMessage());
                         }
                     });
                 }
@@ -271,73 +310,3 @@ public class TrackFragment extends Fragment {
         }
     }
 
-    class TrackSearchTask extends AsyncTask<String, Void, ArrayList<TrackData>> {
-        private final String LOG_TAG = TrackSearchTask.class.getSimpleName();
-
-        private TrackAdapterCallBack callback;
-
-        public TrackSearchTask(TrackAdapterCallBack callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        protected ArrayList<TrackData> doInBackground(String... params) {
-
-            if (params.length == 0) {
-                return null;
-            }
-
-            //TODO: initate somwhere else *once*
-            SpotifyApi api = new SpotifyApi();
-            SpotifyService spotifyService = api.getService();
-
-            TrackData[] array = null;
-
-            ArrayList<TrackData> tracks = new ArrayList<TrackData>();
-            Map<String, Object> queryParams = new HashMap<String, Object>();
-            queryParams.put("country", "SE");
-
-            Tracks musicTracks = null;
-            try {
-                musicTracks = spotifyService.getArtistTopTrack(params[0], queryParams);
-            } catch (RetrofitError error) {
-                Log.d(LOG_TAG, "Out of internet and stuff:" + error.getMessage() );
-                isCancelled();
-            }
-            if(musicTracks != null) {
-                ListIterator<Track> musicTracksIter = musicTracks.tracks.listIterator();
-
-                while (musicTracksIter.hasNext()) {
-                    Track track = musicTracksIter.next();
-                    String albumCoverUrl = "";
-
-                    if(track.album.images != null && track.album.images.size() > 0) {
-                        albumCoverUrl = track.album.images.get(0).url;
-                    }
-                    TrackData trackData = new TrackData(track.id, track.name, track.album.name, albumCoverUrl, track.preview_url,  track.duration_ms);
-
-                    Log.d(LOG_TAG, "Track name: " + track.name);
-                    Log.d(LOG_TAG, "PreviewUrl: " + track.preview_url);
-                    Log.d(LOG_TAG, "AlbumCoverUrl: " + albumCoverUrl);
-
-                    tracks.add(trackData);
-                }
-                /*
-                if (tracks.size() > 0) {
-                    array = tracks.toArray(new TrackData[tracks.size()]);
-                }
-                */
-            }
-            return tracks;
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<TrackData> result) {
-            callback.onCallBack(result);
-        }
-
-    }
-
-    interface TrackAdapterCallBack {
-        public void onCallBack(ArrayList<TrackData> result);
-    }

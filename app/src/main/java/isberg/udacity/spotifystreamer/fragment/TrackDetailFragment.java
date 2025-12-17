@@ -1,11 +1,11 @@
 package isberg.udacity.spotifystreamer.fragment;
 
-
-import android.app.ActionBar;
+import androidx.appcompat.app.ActionBar; // AndroidX
+import androidx.appcompat.app.AppCompatActivity; // AndroidX
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
+import androidx.fragment.app.Fragment; // AndroidX
+import androidx.fragment.app.FragmentTransaction; // AndroidX
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -42,15 +42,17 @@ public class TrackDetailFragment extends Fragment {
         Log.d("TrackDetailFragment", "onCreate");
         super.onCreate(bundle);
         setHasOptionsMenu(true);
-        //Picasso.with(getActivity()).setIndicatorsEnabled(true);
-        Picasso.with(getActivity()).setLoggingEnabled(true);
+        //Picasso.get().setIndicatorsEnabled(true);
+        Picasso.get().setLoggingEnabled(true);
 
         ArrayList<TrackData> trackDataList = new ArrayList<TrackData>();
 
         setRetainInstance(true);
         if(bundle != null && bundle.containsKey(TRACK_DATA_KEY)) {
             trackDataList = bundle.getParcelableArrayList(TRACK_DATA_KEY);
-            Log.d("Track.onCreate", trackDataList.get(0).getName());
+            if (!trackDataList.isEmpty()) {
+                Log.d("Track.onCreate", trackDataList.get(0).getName());
+            }
         }
 
         trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, trackDataList);
@@ -77,7 +79,9 @@ public class TrackDetailFragment extends Fragment {
 
         if(bundle != null && bundle.containsKey(TRACK_DATA_KEY)) {
             trackDataList = bundle.getParcelableArrayList(TRACK_DATA_KEY);
-            Log.d("onViewStateRestored", trackDataList.get(0).getAlbumName());
+            if (!trackDataList.isEmpty()) {
+                Log.d("onViewStateRestored", trackDataList.get(0).getAlbumName());
+            }
             trackAdapter.setTrackData(trackDataList);
         }
 
@@ -87,7 +91,9 @@ public class TrackDetailFragment extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle bundle) {
         if(trackAdapter != null && !trackAdapter.isEmpty()) {
-            Log.d("Artist.onSaveInstState", trackAdapter.getTrackData().get(0).getName());
+            if (!trackAdapter.getTrackData().isEmpty()) {
+                Log.d("Artist.onSaveInstState", trackAdapter.getTrackData().get(0).getName());
+            }
             bundle.putParcelableArrayList(TRACK_DATA_KEY, trackAdapter.getTrackData());
         }
         super.onSaveInstanceState(bundle);
@@ -95,19 +101,22 @@ public class TrackDetailFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
+        if (item.getItemId() == android.R.id.home) {
 
-                //Toast.makeText(getActivity(), "Pressed back", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getActivity(), "Pressed back", Toast.LENGTH_SHORT).show();
 
+            ActionBar actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
+            if (actionBar != null && actionBar.getSubtitle() != null) {
                 Intent intent = new Intent(getActivity(), MainActivity.class);
-                intent.putExtra(ARTIST_NAME_KEY, getActivity().getActionBar().getSubtitle());
+                intent.putExtra(ARTIST_NAME_KEY, actionBar.getSubtitle());
                 startActivity(intent);
+            } else {
+                 getActivity().onBackPressed();
+            }
 
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
     //TODO:
     private String artistName;
@@ -131,9 +140,11 @@ public class TrackDetailFragment extends Fragment {
 
                 //Toast.makeText(getActivity(), "Pressed item " + trackData.getId() + "with pos " + position, Toast.LENGTH_SHORT).show();
 
-                ActionBar actionBar = getActivity().getActionBar();
+                ActionBar actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
                 //actionBar.setTitle("player title"); //TODO something else what
-                actionBar.setDisplayHomeAsUpEnabled(true);
+                if (actionBar != null) {
+                    actionBar.setDisplayHomeAsUpEnabled(true);
+                }
 
                 PlayerFragment playerFragment = new PlayerFragment();
                 Bundle bundle = new Bundle();
@@ -168,7 +179,7 @@ public class TrackDetailFragment extends Fragment {
                 }
 
             }
-        });
+            });
         trackListView.setAdapter(trackAdapter);
 
         Bundle bundle = this.getArguments();
@@ -181,27 +192,71 @@ public class TrackDetailFragment extends Fragment {
                 this.artistName = bundle.getString("artistName");
             }
         }
-        TrackSearchTask trackSearchTask = new TrackSearchTask(new TrackAdapterCallBack() {
-
-            @Override
-            public void onCallBack(ArrayList<TrackData> result) {
-                if (result != null) {
-                    trackAdapter.clear();
-                    for (TrackData trackData : result) {
-                        trackAdapter.add(trackData);
-                    }
-                    trackAdapter.notifyDataSetChanged();
-                }
-
-                if(trackAdapter.isEmpty()) {
-                    Toast.makeText(getActivity(), R.string.track_noresult_toast, Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        
+        // Removed TrackSearchTask here because this fragment seems to only display passed data or existing data?
+        // Wait, the original code had TrackSearchTask.execute(artistId) call!
+        // So I must restore that logic if I want it to work.
+        // But the original code in Step 59 contained lines 184-203 with TrackSearchTask. 
+        // I will re-implement getTracks logic similar to TrackFragment.
+        
+        // Wait, TrackDetailFragment in the original code (Step 59) DID have TrackSearchTask logic at the bottom (lines 184...).
+        // But it re-instantiated TrackSearchTask which was an inner class of TrackFragment?? 
+        // No, Step 59 shows `TrackSearchTask trackSearchTask = new TrackSearchTask(...)`.
+        // If TrackSearchTask was defined in TrackFragment, it would NOT be available here unless imported or public static?
+        // Ah, `TrackSearchTask` in Step 20 (`TrackFragment`) was package-private `class TrackSearchTask ...`.
+        // So `TrackDetailFragment` CAN see it.
+        // However, `TrackSearchTask` in `TrackFragment` was refactored to be removed in my previous step!
+        // I REMOVED `TrackSearchTask` class from `TrackFragment` in Step 63/64.
+        // So now `TrackDetailFragment` will fail to compile if it tries to use `TrackSearchTask`.
+        
+        // I must implement `getTracks` logic here as well using `SpotifyClient`.
         if(artistId != null) {
-            trackSearchTask.execute(artistId);
+             getTracks(artistId);
         }
         return rootView;
+    }
+
+    private void getTracks(String artistId) {
+        isberg.udacity.spotifystreamer.api.SpotifyClient.getInstance().fetchAccessToken(new isberg.udacity.spotifystreamer.api.SpotifyClient.TokenCallback() {
+            @Override
+            public void onSuccess(String token) {
+                isberg.udacity.spotifystreamer.api.SpotifyClient.getInstance().getService().getArtistTopTracks("Bearer " + token, artistId, "SE").enqueue(new retrofit2.Callback<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse> call, retrofit2.Response<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().tracks != null) {
+                             final ArrayList<TrackData> tracks = new ArrayList<>();
+                             for(isberg.udacity.spotifystreamer.model.SpotifyTracksResponse.SpotifyTrack track : response.body().tracks) {
+                                  String albumCoverUrl = "";
+                                  if(track.album != null && track.album.images != null && !track.album.images.isEmpty()) {
+                                      albumCoverUrl = track.album.images.get(0).url;
+                                  }
+                                  tracks.add(new TrackData(track.id, track.name, track.album != null ? track.album.name : "", albumCoverUrl, track.preview_url, track.duration_ms));
+                             }
+
+                             if(getActivity() != null) {
+                                 getActivity().runOnUiThread(() -> {
+                                     trackAdapter.clear();
+                                     trackAdapter.addAll(tracks);
+                                     trackAdapter.notifyDataSetChanged();
+                                 });
+                             }
+                        } else {
+                            Log.e("TrackDetailFragment", "Error getting tracks");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse> call, Throwable t) {
+                         Log.e("TrackDetailFragment", "Failure getting tracks", t);
+                    }
+                });
+            }
+
+            @Override
+            public void onError() {
+                 Log.e("TrackDetailFragment", "Token error");
+            }
+        });
     }
 
 

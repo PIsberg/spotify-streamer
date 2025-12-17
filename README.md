@@ -1,38 +1,68 @@
-#Purpose
-Music playing android app that utilizes the Spotify web API
+# Spotify Streamer
 
-#Description
-Part 1 and 2 of the spotify-streamer assignment @ Udacity nano-degree-course 
+A music playing Android app that utilizes the Spotify Web API.
 
-Avaible to the public in google play store: https://play.google.com/store/apps/details?id=isberg.udacity.spotifystreamer
+## Project Status
+Migrated to **Gradle 8.7**, **AndroidX**, and **Retrofit 2**.
 
-Original requirements/assignment description https://docs.google.com/document/u/1/d/1v4Kv5lSd8-4cs0BW6F24ccA3c1-KDQZG3EV49CUHQys/pub?embedded=true#h.uckrb0yv2r11 
+## Prerequisites
+1.  **Java JDK 17** or higher.
+2.  **Android SDK** (verified with compileSdk 34).
+3.  **Spotify Developer Account** (for Client ID & Secret).
 
-#How to run
-Instructions how to get this app running in tablet mode
+## Configuration
 
-Precondition:
- - Intel CPU
+### 1. Android SDK Location
+Create a file named `local.properties` in the root directory of the project if it doesn't exist. Add the path to your Android SDK:
 
- HAXM-software
- - Download Intel x86 Emulator Accelerator (HAXM installer) under Extras in Android SDK Manager
- - Install it from android\sdk\extras\intel\Hardware_Accelerated_Execution_Manager
+**Windows:**
+```properties
+sdk.dir=C\:\\Users\\<USERNAME>\\AppData\\Local\\Android\\Sdk
+```
+*(Note the double backslashes and the escaped colon)*
 
- Make BIOS setting
- - Enable virtualization
+**Mac/Linux:**
+```properties
+sdk.dir=/Users/<USERNAME>/Library/Android/sdk
+```
 
+### 2. Spotify Credentials
+### 2. Spotify Credentials
+This app uses the **Spotify Client Credentials Flow**.
 
- Create tablet virtual device in emulator with following settings:
-  * "Enable Device Frame"
-  * "no skin"
-  * Landscape
+1.  Create a file named `.env.local` in the root directory.
+2.  Add your credentials in the following format:
+    ```properties
+    SPOTIFY_CLIENT_ID=your_client_id
+    SPOTIFY_CLIENT_SECRET=your_client_secret
+    ```
+    *(This file is gitignored to protect your secrets)*
 
+3.  Build the project. The build system will automatically inject these into the app.
 
-# Known problems/glitches/bugs:
+## Building the Project
 
-1 Emulator gets out of the picture
+### Command Line
+To build the debug APK:
+```bash
+./gradlew assembleDebug
+```
 
-First Select the window either by Alt-Tab or Click clicking it
-Press Alt & Space keys together
-Press "M" or select it with the mouse Use your arrow keys to move the Window
-Press Enter to exit
+The output APK will be located at:
+`app/build/outputs/apk/debug/app-debug.apk`
+
+### Android Studio
+1.  Open Android Studio.
+2.  Select **File > Open** and select the project root directory.
+3.  Sync Gradle (it should happen automatically).
+4.  Run the `app` configuration.
+
+## Features
+- Search for Artists.
+- View Top Tracks for an Artist.
+- Play previews of tracks (Note: Spotify has deprecated 30s previews for some tracks/regions; playback might fail if preview URL is null).
+
+## Troubleshooting
+- **Build fails with "SDK location not found"**: Ensure `local.properties` exists and points to a valid SDK.
+- **"method not found" or class issues**: Ensure you are doing a clean build: `./gradlew clean assembleDebug`.
+- **Playback not working**: The `preview_url` field from Spotify API is deprecated and may return null.

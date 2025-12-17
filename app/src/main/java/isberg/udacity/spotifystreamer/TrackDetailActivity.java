@@ -2,7 +2,7 @@ package isberg.udacity.spotifystreamer;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import androidx.appcompat.app.AppCompatActivity; // AndroidX
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -11,7 +11,7 @@ import isberg.udacity.spotifystreamer.fragment.TrackDetailFragment;
 import isberg.udacity.spotifystreamer.fragment.TrackFragment;
 
 
-public class TrackDetailActivity extends ActionBarActivity {
+public class TrackDetailActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

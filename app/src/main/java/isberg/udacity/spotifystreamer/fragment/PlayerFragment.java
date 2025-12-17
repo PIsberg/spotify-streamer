@@ -7,9 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.fragment.app.DialogFragment; // AndroidX
+import androidx.fragment.app.Fragment; // AndroidX
+import androidx.localbroadcastmanager.content.LocalBroadcastManager; // AndroidX
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -161,14 +161,14 @@ public class PlayerFragment extends DialogFragment {
 
         trackTotalTime.setText(formatTime(trackDurationMs));
 
-        Picasso.with(getActivity()).load(albumCoverUrl).into(albumCoverImageView, new Callback() {
+        Picasso.get().load(albumCoverUrl).into(albumCoverImageView, new Callback() {
             @Override
             public void onSuccess() {
             }
 
             @Override
-            public void onError() {
-                Log.d("PlayerFragment", "Piccasso error!");
+            public void onError(Exception e) {
+                Log.d("PlayerFragment", "Piccasso error!" + e.getMessage());
             }
         });
 
