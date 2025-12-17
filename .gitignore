@@ -40,6 +40,9 @@ captures/
 *.iml
 .idea/*
 
+### Gradle Caches ###
+gradle/wrapper/caches/
+
 # Keystore files
 *.jks
 
