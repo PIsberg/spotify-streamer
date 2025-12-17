@@ -181,3 +181,17 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 
 # End of https://www.gitignore.io/api/windows,intellij,intellij+iml,android,gradle
+
+### VS Code ###
+.vscode/
+.env.local
+
+
+### macOS ###
+.DS_Store
+
+### Secrets ###
+key.properties
+*.jks
+*.keystore
+secring.gpg
