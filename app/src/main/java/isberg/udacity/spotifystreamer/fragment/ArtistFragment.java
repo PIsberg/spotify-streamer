@@ -187,26 +187,82 @@ public class ArtistFragment extends Fragment {
                     public void onResponse(Call<SpotifyArtistSearchResponse> call, Response<SpotifyArtistSearchResponse> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().artists != null) {
                             List<SpotifyArtistSearchResponse.SpotifyArtist> items = response.body().artists.items;
-                            ArrayList<ArtistData> artistDataList = new ArrayList<>();
-                            if (items != null) {
-                                for (SpotifyArtistSearchResponse.SpotifyArtist artist : items) {
-                                    String imageUrl = null;
-                                    if (artist.images != null && !artist.images.isEmpty()) {
-                                        imageUrl = artist.images.get(0).url; // Use first image
-                                    }
-                                    artistDataList.add(new ArtistData(artist.id, artist.name, imageUrl));
-                                }
-                            }
-                            
-                            if (getActivity() != null) {
-                                getActivity().runOnUiThread(() -> {
-                                    artistAdapter.clear();
-                                    artistAdapter.addAll(artistDataList);
-                                    if(artistAdapter.isEmpty()) {
+
+                            if (items == null || items.isEmpty()) {
+                                if (getActivity() != null) {
+                                    getActivity().runOnUiThread(() -> {
+                                        artistAdapter.clear();
                                         Toast.makeText(getActivity(), R.string.artist_noresult_toast, Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                                    });
+                                }
+                                return;
                             }
+
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> 
+                                    Toast.makeText(getActivity(), "Checking for playable tracks...", Toast.LENGTH_SHORT).show()
+                                );
+                            }
+
+                            // Use CompletableFuture to check tracks in parallel
+                            List<java.util.concurrent.CompletableFuture<ArtistData>> futures = new ArrayList<>();
+
+                            for (SpotifyArtistSearchResponse.SpotifyArtist artist : items) {
+                                futures.add(java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                                    try {
+                                        Call<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse> tracksCall = 
+                                            SpotifyClient.getInstance().getService().getArtistTopTracks("Bearer " + token, artist.id, "US");
+                                        
+                                        Response<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse> tracksResponse = tracksCall.execute();
+                                        
+                                        if (tracksResponse.isSuccessful() && tracksResponse.body() != null && tracksResponse.body().tracks != null) {
+                                            for (isberg.udacity.spotifystreamer.model.SpotifyTracksResponse.SpotifyTrack track : tracksResponse.body().tracks) {
+                                                if (track.preview_url != null && !track.preview_url.isEmpty()) {
+                                                    // Found a playable track, this artist is valid
+                                                    String imageUrl = null;
+                                                    if (artist.images != null && !artist.images.isEmpty()) {
+                                                        imageUrl = artist.images.get(0).url; 
+                                                    }
+                                                    return new ArtistData(artist.id, artist.name, imageUrl);
+                                                }
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        Log.e(LOG_TAG, "Error checking tracks for artist: " + artist.name, e);
+                                    }
+                                    return null; // Invalid or error
+                                }));
+                            }
+
+                            // Wait for all checks to complete
+                            java.util.concurrent.CompletableFuture<Void> allFutures = java.util.concurrent.CompletableFuture.allOf(
+                                futures.toArray(new java.util.concurrent.CompletableFuture[0])
+                            );
+
+                            allFutures.thenRun(() -> {
+                                ArrayList<ArtistData> validArtists = new ArrayList<>();
+                                for (java.util.concurrent.CompletableFuture<ArtistData> future : futures) {
+                                    try {
+                                        ArtistData data = future.join();
+                                        if (data != null) {
+                                            validArtists.add(data);
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                if (getActivity() != null) {
+                                    getActivity().runOnUiThread(() -> {
+                                        artistAdapter.clear();
+                                        artistAdapter.addAll(validArtists);
+                                        if (artistAdapter.isEmpty()) {
+                                            Toast.makeText(getActivity(), "No artists with playable tracks found.", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+                            });
+
                         } else {
                             Log.e(LOG_TAG, "Search failed: " + response.code());
                         }

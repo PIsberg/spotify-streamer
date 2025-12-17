@@ -46,15 +46,20 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             if (actionCommand.equals(PLAYER_ACTION_PLAY) && mediaPlayer == null) {
 
                 initMediaPlayer();
-                updateSeekTime(intent);
+                pendingSeekTime = getSeekTime(intent);
                 String url = getUrl(intent);
                 try {
-                    mediaPlayer.setDataSource(url);
+                    if (url != null && !url.isEmpty()) {
+                        mediaPlayer.setDataSource(url);
+                        mediaPlayer.prepareAsync(); // prepare async to not block main thread
+                    } else {
+                        Log.e("PlayerService", "Preview URL is null or empty");
+                        stopSelf(); // Stop the service if no URL
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    stopSelf();
                 }
-
-                mediaPlayer.prepareAsync(); // prepare async to not block main thread
             }
         }
         else {
@@ -118,13 +123,18 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         return null;
     }
 
-    /** Called when MediaPlayer is ready */
+    private int pendingSeekTime = -1;
+
     public void onPrepared(MediaPlayer mMediaPlayer) {
         Log.d("PlayerService", "onPrepared");
         if(broadCastCurrentTimeTimer == null) {
             broadCastCurrentTimeTimer = new Timer();
             runBroadCastCurrentTimeTimerTask();
             broadCastCurrentTimeTimer.schedule(broadCastCurrentTimeTimerTask, 0, BROADCAST_INTERVAL_MS);
+        }
+        if (pendingSeekTime >= 0) {
+            mMediaPlayer.seekTo(pendingSeekTime);
+            pendingSeekTime = -1;
         }
         mMediaPlayer.start();
 

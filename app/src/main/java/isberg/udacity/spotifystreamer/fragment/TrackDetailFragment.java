@@ -220,7 +220,7 @@ public class TrackDetailFragment extends Fragment {
         isberg.udacity.spotifystreamer.api.SpotifyClient.getInstance().fetchAccessToken(new isberg.udacity.spotifystreamer.api.SpotifyClient.TokenCallback() {
             @Override
             public void onSuccess(String token) {
-                isberg.udacity.spotifystreamer.api.SpotifyClient.getInstance().getService().getArtistTopTracks("Bearer " + token, artistId, "SE").enqueue(new retrofit2.Callback<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse>() {
+                isberg.udacity.spotifystreamer.api.SpotifyClient.getInstance().getService().getArtistTopTracks("Bearer " + token, artistId, "US").enqueue(new retrofit2.Callback<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse>() {
                     @Override
                     public void onResponse(retrofit2.Call<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse> call, retrofit2.Response<isberg.udacity.spotifystreamer.model.SpotifyTracksResponse> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().tracks != null) {
@@ -230,7 +230,9 @@ public class TrackDetailFragment extends Fragment {
                                   if(track.album != null && track.album.images != null && !track.album.images.isEmpty()) {
                                       albumCoverUrl = track.album.images.get(0).url;
                                   }
-                                  tracks.add(new TrackData(track.id, track.name, track.album != null ? track.album.name : "", albumCoverUrl, track.preview_url, track.duration_ms));
+                                  if (track.preview_url != null && !track.preview_url.isEmpty()) {
+                                      tracks.add(new TrackData(track.id, track.name, track.album != null ? track.album.name : "", albumCoverUrl, track.preview_url, track.duration_ms));
+                                  }
                              }
 
                              if(getActivity() != null) {

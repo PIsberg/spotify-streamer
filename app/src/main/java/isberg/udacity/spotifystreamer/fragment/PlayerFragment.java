@@ -136,8 +136,8 @@ public class PlayerFragment extends DialogFragment {
         currentIndex = 0;
 
         Intent intent = new Intent(getActivity(), PlayerService.class);
-        intent.setAction(PlayerService.PLAYER_ACTION_STOP);
-        getActivity().startService(intent);
+        // intent.setAction(PlayerService.PLAYER_ACTION_STOP);
+        // getActivity().startService(intent);
     }
 
     private void populateGui(int currentIndex) {
@@ -231,6 +231,11 @@ public class PlayerFragment extends DialogFragment {
         }
 
         trackPreviewURL = trackData.get(currentIndex).getPreviewUrl();
+
+        if (trackPreviewURL == null || trackPreviewURL.isEmpty()) {
+            Toast.makeText(getActivity(), "No preview available for this track", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         playTrackButton.setImageResource(android.R.drawable.ic_media_pause);
         playTrackButton.setTag(LOCAL_STATE.PLAY);

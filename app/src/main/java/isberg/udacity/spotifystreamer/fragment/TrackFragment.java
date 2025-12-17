@@ -207,7 +207,7 @@ public class TrackFragment extends Fragment {
         SpotifyClient.getInstance().fetchAccessToken(new SpotifyClient.TokenCallback() {
             @Override
             public void onSuccess(String token) {
-                SpotifyClient.getInstance().getService().getArtistTopTracks("Bearer " + token, artistId, "SE").enqueue(new retrofit2.Callback<SpotifyTracksResponse>() {
+                SpotifyClient.getInstance().getService().getArtistTopTracks("Bearer " + token, artistId, "US").enqueue(new retrofit2.Callback<SpotifyTracksResponse>() {
                     @Override
                     public void onResponse(Call<SpotifyTracksResponse> call, Response<SpotifyTracksResponse> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().tracks != null) {
@@ -217,7 +217,9 @@ public class TrackFragment extends Fragment {
                                   if(track.album != null && track.album.images != null && !track.album.images.isEmpty()) {
                                       albumCoverUrl = track.album.images.get(0).url;
                                   }
-                                  tracks.add(new TrackData(track.id, track.name, track.album != null ? track.album.name : "", albumCoverUrl, track.preview_url, track.duration_ms));
+                                  if (track.preview_url != null && !track.preview_url.isEmpty()) {
+                                      tracks.add(new TrackData(track.id, track.name, track.album != null ? track.album.name : "", albumCoverUrl, track.preview_url, track.duration_ms));
+                                  }
                              }
 
                              if(getActivity() != null) {
